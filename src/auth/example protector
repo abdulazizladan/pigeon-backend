@@ -1,0 +1,21 @@
+/**  Example controller usage
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from './roles.guard';
+import { Roles } from './roles.decorator';
+
+@Controller('protected')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+export class ProtectedController {
+  @Get('admin')
+  @Roles('admin')
+  adminOnly() {
+    return 'Admin content';
+  }
+
+  @Get('user')
+  @Roles('user', 'admin')
+  userContent() {
+    return 'User content';
+  }
+} */
