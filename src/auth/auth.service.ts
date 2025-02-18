@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { User } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -17,40 +18,32 @@ export class AuthService {
        * @param userData 
        * @returns 
        */
-      async validateUser(userData: LoginDto): Promise<any> {
-        try {
-          const user = await this.usersService.findOne(userData.email);
-          if (user && user.password === userData.password) {
-            const { password, ...result } = user;
-            return result;
-          }
-        } catch (error) {
-          return {
-            success: false,
-            message: error.message
-          }
+      async validateUser(loginDto: LoginDto): Promise<Omit<User, 'password'> | null> {
+        // Retrieve user including the password field
+        const user = await this.usersService.findOne(loginDto.email);
+        if (!user) {
+          return null;
         }
+    
+        // Compare provided password with stored hash
+        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+        if (!isPasswordValid) {
+          return null;
+        }
+    
+        // Omit password from the returned user object
+        const { password, ...result } = user;
+        return result;
       }
     
-      async login(user: LoginDto) {
-        try {
-          const userData = await this.validateUser(user);
-          if(userData) {
-            return {
-              access_token: this.jwtService.sign(userData),
-            };
-          }else {
-            return {
-              success: true,
-              user: null,
-              message: "User not found"
-            }
-          }
-        }catch(error) {
-          return {
-            success: false,
-            message: error.message
-          }
+      async login(loginDto: LoginDto) {
+        const user = await this.validateUser(loginDto);
+        if (!user) {
+          throw new UnauthorizedException('Invalid credentials');
         }
+    
+        return {
+          access_token: this.jwtService.sign({ ...user }),
+        };
       }
 }

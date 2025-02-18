@@ -53,12 +53,14 @@ export class StationService {
       if( station === null) {
         return {
           success: false,
-          data: null
+          data: null,
+          message: 'Station not found'
         }
       }else {
         return {
           success: true,
-          data: station
+          data: station,
+          message: 'Station found'
         }
       }
       }catch (error) {
