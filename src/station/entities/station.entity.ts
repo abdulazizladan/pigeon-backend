@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "src/user/entities/user.entity";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity({name: "Station"})
 export class Station {
@@ -25,5 +26,12 @@ export class Station {
 
     @Column({})
     latitude: number;
+
+    @JoinColumn({name: "user_id", referencedColumnName: "id"})
+    @OneToOne((type) => User, (user: User) => user.station)
+    manager: User;
+
+    @Column({})
+    pricePerLiter: number;
 
 }

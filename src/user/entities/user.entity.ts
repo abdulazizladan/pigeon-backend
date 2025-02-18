@@ -1,13 +1,17 @@
-import { Column, Entity, OneToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { Info } from "./info.entity";
 import { Role } from "../enums/role.enum";
 import * as bcrypt from "bcrypt";
 import { Contact } from "./contact.entity";
+import { Station } from "src/station/entities/station.entity";
 
 @Entity({name: "User"})
 export class User {
     
-    @PrimaryColumn({})
+    @PrimaryGeneratedColumn({})
+    id:number;
+     
+    @Column({})
     email: string;
 
     @Column({default: "password"})
@@ -22,12 +26,15 @@ export class User {
     @OneToOne((type) => Contact, contact => contact.user)
     contact: Contact;
 
+    @OneToOne((type) => Station, station => station.manager)
+    station: Station;
+
     async validatePassword(password: string): Promise<boolean> {
         return bcrypt.compare(password, this.password);
     }
 
     static async hashPassword(password: string): Promise<string> {
-        return bcrypt.hash(password, 10); // 10 salt rounds
+        return bcrypt.hash(password, 10); // 10 salt rounds 
     }
 }
 
