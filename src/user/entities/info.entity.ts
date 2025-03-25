@@ -13,10 +13,10 @@ export class Info {
     @Column({})
     lastName: string;
 
-    @Column({})
+    @Column({nullable: true})
     image: string;
 
     @JoinColumn({name: 'user_email', referencedColumnName: "email"})
-    @OneToOne((type) => User, user => user.info)
+    @OneToOne((type) => User, user => user.info, { cascade: true, onDelete: 'CASCADE'})
     user: User;
 }

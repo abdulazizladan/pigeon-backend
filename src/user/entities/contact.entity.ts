@@ -12,6 +12,6 @@ export class Contact {
     phone: string;
 
     @JoinColumn({name: "user_email", referencedColumnName: "email"})
-    @OneToOne((type) => User, user => user.contact)
+    @OneToOne((type) => User, user => user.contact, {cascade: true, onDelete: 'CASCADE'})
     user: User;
 }

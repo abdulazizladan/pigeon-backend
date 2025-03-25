@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StationModule } from './station/station.module';
 import { SaleModule } from './sale/sale.module';
 import { DispenserModule } from './dispenser/dispenser.module';
-import { PumpModule } from './pump/pump.module';
+import { ReportModule } from './report/report.module';
+import { TicketModule } from './ticket/ticket.module';
+import { ChatGateway } from './chat.gateway';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'db',
@@ -22,13 +24,12 @@ import { PumpModule } from './pump/pump.module';
     StationModule, 
     SaleModule, 
     DispenserModule, 
-    PumpModule,
+    ReportModule, 
+    TicketModule,
   ],
-  controllers: [
-    AppController
-  ],
+  controllers: [],
   providers: [
-    AppService
+    ChatGateway
   ],
 })
 export class AppModule {}

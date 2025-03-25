@@ -1,13 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Role } from './enums/role.enum';
+import { Roles } from 'src/auth/roles.decorator';
 
+@ApiTags('Users')
+@ApiBearerAuth()
 @Controller('user')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Roles(Role.admin, Role.admin)
   @ApiOkResponse({ description: 'User created successfully' })
   @ApiOperation({ summary: 'Create user' })
   @Post()
@@ -15,6 +23,16 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Roles(Role.admin, Role.director)
+  @ApiOkResponse({description: "User stats found"})
+  @ApiOperation({summary: "Get user stats by role and status"})
+  @Get('stats')
+  @Roles(Role.admin)
+  getStats() {
+    return this.userService.getStats();
+  }
+
+  @Roles(Role.admin, Role.director)
   @ApiOkResponse({ description: 'User found' })
   @ApiNoContentResponse({ description: 'No users found' })
   @ApiOperation({ summary: 'Find all users' })
@@ -23,13 +41,16 @@ export class UserController {
     return this.userService.findAll();
   }
 
+  @Roles(Role.admin, Role.admin)
+  @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({ summary: 'Find one user' })
   @ApiNotFoundResponse({ description: 'User not found' })
-  @Get(':id')
+  @Get(':email')
   findOne(@Param('email') email: string) {
     return this.userService.findOne(email);
   }
 
+  @Roles(Role.admin)
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiOperation({ summary: 'Update user' })
   @Patch(':id')
@@ -37,8 +58,9 @@ export class UserController {
     return this.userService.update(email, updateUserDto);
   }
 
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Remove user' })
-  @Delete(':id')
+  @Delete(':email')
   remove(@Param('email') email: string) {
     return this.userService.remove(email);
   }

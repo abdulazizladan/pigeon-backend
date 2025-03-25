@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Dispenser } from "src/dispenser/entities/dispenser.entity";
+import { Station } from "src/station/entities/station.entity";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
 
 @Entity({name: "Sale"})
 export class Sale {
@@ -19,7 +21,12 @@ export class Sale {
 
     @Column({})
     transactionDate: Date;
+    
+    @ManyToOne((type) => Dispenser, dispenser => dispenser.sales)
+    @JoinColumn({name: 'dispenser_id', referencedColumnName: 'id'})
+    dispenser: Dispenser;
 
-    @Column({})
-    dispenserId: number;    
+    @ManyToOne((type) => Station, station => station.sales)
+    @JoinColumn({name: 'station_id', referencedColumnName: 'id'})
+    station: Station;
 }

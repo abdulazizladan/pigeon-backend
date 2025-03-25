@@ -13,8 +13,20 @@ export class StationService {
     private readonly stationRepository: Repository<Station>,
   ) {}
 
-  create(createStationDto: CreateStationDto) {
-    return 'This action adds a new station';
+  async create(createStationDto: CreateStationDto) {
+    const station = await this.stationRepository.create(createStationDto);
+    try {
+      this.stationRepository.save(station)
+      return {
+        success: true,
+        message: 'Station created successfully',
+      }
+    } catch (error ) {
+      return {
+        success: false,
+        message: 'Error creating station',
+      }
+    }
   }
 
   async findAll() {
@@ -72,10 +84,33 @@ export class StationService {
   }
 
   update(id: number, updateStationDto: UpdateStationDto) {
-    return `This action updates a #${id} station`;
+    try {
+      this.stationRepository.update(id, updateStationDto);
+      return {
+        success: true,
+        data: updateStationDto,
+        message: 'Station updated successfully'
+      }
+    }catch (error) {
+      return {
+        success: false,
+        message: error.message
+      }
+    }
   }
 
   remove(id: number) {
-    return `This action removes a #${id} station`;
+    try {
+      this.stationRepository.delete(id);
+      return {
+        success: true,
+        message: 'Station deleted successfully'
+      }
+    }catch (error) {
+      return {
+        success: false,
+        message: error.message
+      }
+    }
   }
 }

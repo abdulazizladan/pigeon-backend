@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateInfoDto {
+    
     @ApiProperty({})
     firstName: string;
     
@@ -9,4 +10,7 @@ export class CreateInfoDto {
     
     @ApiProperty({})
     age: number;
+
+    @ApiProperty({})
+    image: string;
 }

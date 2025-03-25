@@ -20,30 +20,61 @@ export class AuthService {
        */
       async validateUser(loginDto: LoginDto): Promise<Omit<User, 'password'> | null> {
         // Retrieve user including the password field
-        const user = await this.usersService.findOne(loginDto.email);
-        if (!user) {
-          return null;
+        const user = await this.usersService.findByEmail(loginDto.email);
+        if (user && await bcrypt.compare(loginDto.password, user.data.password)) {
+          const { password, ...result } = user;
+          console.log(result)
+          return result;
         }
-    
-        // Compare provided password with stored hash
-        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+        return null;
+        /**const isPasswordValid = await bcrypt.compare(loginDto.password, user.data.password);
         if (!isPasswordValid) {
           return null;
         }
-    
-        // Omit password from the returned user object
+        // Return user without password
         const { password, ...result } = user;
-        return result;
+        return result;**/
       }
     
+      /**
+       *
+       * @param loginDto
+       * @returns
+       */
       async login(loginDto: LoginDto) {
+
+        const user = await this.usersService.findByEmail(loginDto.email);
+        if (!user) {
+          throw new UnauthorizedException();
+        } else{
+          const match = await bcrypt.compare(loginDto.password, user.data.password);
+          if (!match) {
+            throw new UnauthorizedException();
+          }else{
+            const payload = { 
+              email: user.data.email, 
+              password: user.data.password, 
+              sub: user.data.id, 
+              role: user.data.role 
+            };
+            return {
+              access_token: this.jwtService.sign(payload)
+            }
+          }
+        } 
+        /**try{
         const user = await this.validateUser(loginDto);
         if (!user) {
           throw new UnauthorizedException('Invalid credentials');
-        }
-    
+        } else
         return {
           access_token: this.jwtService.sign({ ...user }),
         };
+        } catch (error) {
+          return {
+            success: false,
+            message: error.message
+          }
+        }**/
       }
 }
