@@ -1,28 +1,22 @@
-FROM node:18-alpine
+# Use Node.js 20.x (matches your project's engine requirements)
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies first
+# Install build tools for native modules
 RUN apk add --no-cache git python3 make g++
 
-RUN npm install -g npm@latest && \
-    npm install --legacy-peer-deps \
-    @nestjs/core@^11 \
-    @nestjs/common@^11 \
-    @nestjs/websockets@^11 \
-    @nestjs/platform-socket.io@^11
+# Update npm to latest compatible version
+RUN npm install -g npm@10
 
 COPY package*.json ./
 
-# Use npm ci for production or --legacy-peer-deps if needed
-
+# Install dependencies with clean slate
 RUN npm ci --legacy-peer-deps
 
 COPY . .
 
-# Uncomment for production build
 RUN npm run build
 
 EXPOSE 3000
-
 CMD ["npm", "run", "start:prod"]
