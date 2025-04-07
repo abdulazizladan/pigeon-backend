@@ -1,10 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SaleService } from './sale.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
+import { Role } from 'src/auth/enums/role.enum';
 
+@ApiTags('Sale')
+@ApiBearerAuth()
 @Controller('sale')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SaleController {
   
   constructor(private readonly saleService: SaleService) {}
@@ -14,6 +21,7 @@ export class SaleController {
    * @param createSaleDto 
    * @returns 
    */
+  @Roles(Role.manager)
   @ApiOperation(
     {
       summary: 'Create a new sale',
@@ -29,6 +37,7 @@ export class SaleController {
    * 
    * @returns 
    */
+  @Roles(Role.director, Role.manager)
   @ApiOperation(
     {
       summary: 'Get all sales',
@@ -45,6 +54,7 @@ export class SaleController {
    * @param id 
    * @returns 
    */
+  @Roles(Role.director, Role.manager)
   @ApiOperation(
     {
       summary: 'Get a sale by id',
@@ -62,6 +72,7 @@ export class SaleController {
    * @param updateSaleDto 
    * @returns 
    */
+  @Roles(Role.manager)
   @ApiOperation(
     {
       summary: 'Update a sale',
@@ -78,6 +89,7 @@ export class SaleController {
    * @param id 
    * @returns 
    */
+  /** 
   @ApiOperation(
     {
       summary: 'Delete a sale',
@@ -88,4 +100,5 @@ export class SaleController {
   remove(@Param('id') id: string) {
     return this.saleService.remove(+id);
   }
+    **/
 }

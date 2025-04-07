@@ -15,7 +15,7 @@ import { Roles } from 'src/auth/roles.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Roles(Role.admin, Role.admin)
+  @Roles(Role.admin)
   @ApiOkResponse({ description: 'User created successfully' })
   @ApiOperation({ summary: 'Create user' })
   @Post()
@@ -27,7 +27,6 @@ export class UserController {
   @ApiOkResponse({description: "User stats found"})
   @ApiOperation({summary: "Get user stats by role and status"})
   @Get('stats')
-  @Roles(Role.admin)
   getStats() {
     return this.userService.getStats();
   }
@@ -41,7 +40,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Roles(Role.admin, Role.admin)
+  @Roles(Role.admin)
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({ summary: 'Find one user' })
   @ApiNotFoundResponse({ description: 'User not found' })
@@ -58,10 +57,10 @@ export class UserController {
     return this.userService.update(email, updateUserDto);
   }
 
-  @Roles(Role.admin)
+  /**@Roles(Role.admin)
   @ApiOperation({ summary: 'Remove user' })
   @Delete(':email')
   remove(@Param('email') email: string) {
     return this.userService.remove(email);
-  }
+  }**/
 }

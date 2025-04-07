@@ -2,17 +2,21 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Cla
 import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@ApiTags()
+@ApiBearerAuth()
 @Controller('report')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class ReportController {
+
   constructor(private readonly reportService: ReportService) {}
 
+  @Roles(Role.manager)
   @ApiOperation(
     {
       summary: 'Create a new report',
@@ -24,7 +28,7 @@ export class ReportController {
     return this.reportService.create(createReportDto);
   }
 
-  @Roles(Role.admin)
+  @Roles(Role.admin, Role.director)
   @ApiOperation(
     {
       summary: 'Get all reports',
@@ -36,6 +40,7 @@ export class ReportController {
     return this.reportService.findAll();
   }
 
+  @Roles(Role.director, Role.manager)
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation(
     {
@@ -48,6 +53,7 @@ export class ReportController {
     return this.reportService.findOne(+id);
   }
 
+  @Roles(Role.manager)
   @ApiOperation(
     {
       summary: 'Update a report',
@@ -59,6 +65,7 @@ export class ReportController {
     return this.reportService.update(+id, updateReportDto);
   }
 
+  /** 
   @ApiOperation(
     {
       summary: 'Delete a report',
@@ -68,5 +75,5 @@ export class ReportController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.reportService.remove(+id);
-  }
+  }**/
 }

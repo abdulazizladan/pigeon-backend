@@ -13,8 +13,10 @@ import { Role } from 'src/user/enums/role.enum';
 @Controller('station')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class StationController {
+  
   constructor(private readonly stationService: StationService) {}
 
+  @Roles(Role.admin, Role.director)
   @ApiOperation(
     {
       description: "Add new station",
@@ -25,7 +27,7 @@ export class StationController {
   create(@Body() createStationDto: CreateStationDto) {
     return this.stationService.create(createStationDto);
   }
-
+  @Roles(Role.director, Role.director)
   @ApiOperation(
     {
       description: "Get all stations",
@@ -37,7 +39,7 @@ export class StationController {
     return this.stationService.findAll();
   }
 
-  @Roles(Role.admin, Role.director)
+  @Roles(Role.director, Role.manager)
   @ApiOperation(
     {
       description: "Get single station",
@@ -50,6 +52,7 @@ export class StationController {
     return this.stationService.findOne(+id);
   }
 
+  @Roles(Role.director)
   @ApiOperation(
     {
       description: "Update station",
@@ -61,7 +64,7 @@ export class StationController {
     return this.stationService.update(+id, updateStationDto);
   }
 
-  @ApiOperation(
+  /**@ApiOperation(
     {
       description: "Remove station",
       summary: "Remove station"
@@ -70,5 +73,5 @@ export class StationController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.stationService.remove(+id);
-  }
+  }**/
 }

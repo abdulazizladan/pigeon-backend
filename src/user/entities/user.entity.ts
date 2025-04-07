@@ -38,7 +38,7 @@ export class User {
     @OneToOne((type) => Contact, contact => contact.user)
     contact: Contact;
 
-    @OneToOne((type) => Station, station => station.manager)
+    @OneToOne((type) => Station, station => station.manager, {nullable: true})
     station: Station;
 
     @OneToMany((type) => Ticket, ticket => ticket.sender)
