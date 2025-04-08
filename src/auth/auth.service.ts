@@ -53,7 +53,7 @@ export class AuthService {
           }else{
             const payload = { 
               email: user.data.email, 
-              password: user.data.password, 
+              //password: user.data.password, 
               sub: user.data.id, 
               role: user.data.role 
             };
