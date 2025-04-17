@@ -98,7 +98,8 @@ export class UserService {
         'email', 
         'contact', 
         'info', 
-        'station'
+        'station',
+        'role'
       ]
     });
     try {
