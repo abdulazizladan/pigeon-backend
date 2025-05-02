@@ -40,5 +40,8 @@ export class Station {
     sales: Sale[];
 
     @OneToMany((type) => Dispenser, dispenser => dispenser.station)
-    dispensers: Dispenser[]
+    dispensers: Dispenser[];
+
+    @Column({default: "active"})
+    status: "active" | "inactive";
 }

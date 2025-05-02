@@ -64,6 +64,18 @@ export class StationController {
     return this.stationService.update(+id, updateStationDto);
   }
 
+  @Roles(Role.director, Role.admin)
+  @ApiOperation(
+    {
+      description: "Get station stats",
+      summary: "Get station stats"
+    }
+  )
+  @Get('stats')
+  getStats() {
+    return this.stationService.getStats();
+  }
+
   /**@ApiOperation(
     {
       description: "Remove station",

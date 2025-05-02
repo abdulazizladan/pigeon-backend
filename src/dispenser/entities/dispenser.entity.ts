@@ -27,7 +27,7 @@ export class Dispenser {
     phone: string;
 
     @Column({default: Status.active})
-    status: Status;
+    status: "active" | "inactive";
 
     @OneToMany((type) => Sale, sale => sale.dispenser)
     sales: Sale[];

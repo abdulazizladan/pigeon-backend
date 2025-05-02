@@ -66,7 +66,11 @@ export class TicketService {
   }
 
   async findAll() {
-    const ticket = await this.ticketRepository.find()
+    const ticket = await this.ticketRepository.find({
+      relations: [
+        'sender'
+      ]
+    })
     try {
       return {
         success: true,
@@ -104,6 +108,16 @@ export class TicketService {
       }
     }
   }
+
+  findByEmail(email: string) {
+    return this.ticketRepository.find({
+      where: {"sender": {email}},
+      relations: [
+        'sender'
+      ]
+    })
+  }
+
 
   update(id: number, updateTicketDto: UpdateTicketDto) {
     try {

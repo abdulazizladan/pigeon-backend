@@ -29,6 +29,22 @@ export class StationService {
     }
   }
 
+  async getStats() {
+    const totalStations = await this.stationRepository.count();
+    const activeStations = await this.stationRepository.count({where: { status: 'active' }});
+    const inactiveStations = await this.stationRepository.count({where: { status: 'inactive' }});
+
+    return {
+      success: true,
+      data: {
+        totalStations,
+        activeStations,
+        inactiveStations,
+      },
+      message: 'Station stats found'
+    }
+  }
+
   async findAll() {
     const stations = await this.stationRepository.find();
     try {

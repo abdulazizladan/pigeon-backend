@@ -64,6 +64,18 @@ export class DispenserController {
     return this.dispenserService.update(+id, updateDispenserDto);
   }
 
+  @Get('stats')
+  @Roles(Role.director, Role.manager)
+  @ApiOperation(
+    {
+      summary: "get dispenser stats",
+      description: "Get dispenser stats"
+    }
+  )
+  getStats() {
+    return this.dispenserService.getStats();
+  }
+
   /** 
   @ApiOperation(
     {

@@ -59,6 +59,13 @@ export class TicketController {
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
+  @ApiOperation({summary: "Get ticket by email"})
+  @Roles( Role.director, Role.manager)
+  @Get('email/:email')
+  findByEmail(@Param('email') email: string) {
+    return this.ticketService.findByEmail(email);
+  }
+  @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({summary: "Get ticket by ID"})
   @Roles(Role.admin, Role.director, Role.manager)
   @Get(':id')

@@ -32,6 +32,21 @@ export class DispenserService {
     }
   }
 
+  async getStats() {
+    const totalDispensers = await this.dispenserRepository.count()
+    const activeDispensers = await this.dispenserRepository.count({where: {status: "active"}})
+    const inactiveDispensers = await this.dispenserRepository.count({where: {status: "inactive"}})
+    return {
+      success: true,
+      data: {
+        totalDispensers,
+        activeDispensers,
+        inactiveDispensers
+      },
+      message: "Dispenser stats found"
+    }
+  }
+
   async findAll() {
     const dispensers = await this.dispenserRepository.find()
     try {
