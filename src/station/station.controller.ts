@@ -16,6 +16,18 @@ export class StationController {
   
   constructor(private readonly stationService: StationService) {}
 
+  @Roles(Role.director, Role.admin)
+  @ApiOperation(
+    {
+      description: "Get station stats",
+      summary: "Get station stats"
+    }
+  )
+  @Get('stats')
+  getStats() {
+    return this.stationService.getSummary();
+  }
+
   @Roles(Role.admin, Role.director)
   @ApiOperation(
     {
@@ -64,26 +76,5 @@ export class StationController {
     return this.stationService.update(+id, updateStationDto);
   }
 
-  @Roles(Role.director, Role.admin)
-  @ApiOperation(
-    {
-      description: "Get station stats",
-      summary: "Get station stats"
-    }
-  )
-  @Get('stats')
-  getStats() {
-    return this.stationService.getStats();
-  }
-
-  /**@ApiOperation(
-    {
-      description: "Remove station",
-      summary: "Remove station"
-    }
-  )
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.stationService.remove(+id);
-  }**/
+  
 }

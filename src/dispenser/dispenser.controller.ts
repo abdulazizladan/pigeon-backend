@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
 import { DispenserService } from './dispenser.service';
 import { CreateDispenserDto } from './dto/create-dispenser.dto';
 import { UpdateDispenserDto } from './dto/update-dispenser.dto';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
@@ -13,7 +13,20 @@ import { Role } from 'src/auth/enums/role.enum';
 @Controller('dispenser')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class DispenserController {
+  
   constructor(private readonly dispenserService: DispenserService) {}
+
+  @Roles(Role.admin, Role.director)
+  @ApiOperation(
+    {
+      summary: "get dispenser stats",
+      description: "Get dispenser stats"
+    }
+  )
+  @Get('stats')
+  getStats() {
+    return this.dispenserService.getSummary();
+  }
 
   @Roles(Role.manager)
   @ApiOperation(
@@ -64,27 +77,4 @@ export class DispenserController {
     return this.dispenserService.update(+id, updateDispenserDto);
   }
 
-  @Get('stats')
-  @Roles(Role.director, Role.manager)
-  @ApiOperation(
-    {
-      summary: "get dispenser stats",
-      description: "Get dispenser stats"
-    }
-  )
-  getStats() {
-    return this.dispenserService.getStats();
-  }
-
-  /** 
-  @ApiOperation(
-    {
-      summary: "delete dispenser",
-      description: "Delete existing dispenser"
-    }
-  )
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.dispenserService.remove(+id);
-  }**/
 }

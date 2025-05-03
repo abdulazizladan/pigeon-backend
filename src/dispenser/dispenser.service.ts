@@ -32,16 +32,16 @@ export class DispenserService {
     }
   }
 
-  async getStats() {
+  async getSummary() {
     const totalDispensers = await this.dispenserRepository.count()
     const activeDispensers = await this.dispenserRepository.count({where: {status: "active"}})
     const inactiveDispensers = await this.dispenserRepository.count({where: {status: "inactive"}})
     return {
       success: true,
       data: {
-        totalDispensers,
-        activeDispensers,
-        inactiveDispensers
+        total: totalDispensers,
+        active: activeDispensers,
+        inactive: inactiveDispensers
       },
       message: "Dispenser stats found"
     }
