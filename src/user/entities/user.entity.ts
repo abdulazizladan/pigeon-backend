@@ -9,50 +9,110 @@ import { Status } from "../enums/status.enum";
 import { Ticket } from "src/ticket/entities/ticket.entity";
 import { Exclude } from "class-transformer";
 import { Reply } from "src/ticket/entities/reply.entity";
+import { IsEmail, IsEnum, IsString, IsOptional, IsDate, IsArray, IsNumber } from "class-validator";
 
 @Entity({name: "User"})
 export class User {
-    
+    /**
+     * Unique identifier for the user (Primary Key)
+     */
     @PrimaryGeneratedColumn({})
+    @IsNumber()
     id:number;
      
+    /**
+     * Unique email address of the user
+     */
     @Column({unique: true})
+    @IsEmail()
     email: string;
 
+    /**
+     * Hashed password for the user (excluded from serialization)
+     */
     @Exclude()
     @Column({default: "password"})
+    @IsString()
     password: string;
 
+    /**
+     * Role of the user (admin, director, manager)
+     */
     @Column({type: 'text', enum: Role, default: Role.manager})
+    @IsEnum(Role)
     role: Role;
 
+    /**
+     * Status of the user (active, inactive, etc.)
+     */
     @Column({default: Status.active})
+    @IsEnum(Status)
     status: Status;
 
+    /**
+     * Date when the user was created
+     */
     @CreateDateColumn({default: Date.now()})
+    @IsDate()
     createdAt: Date;
 
+    /**
+     * One-to-one relation to Info entity (user's personal info)
+     */
     @OneToOne((type) => Info, info => info.user) 
+    @IsOptional()
     info: Info;
 
+    /**
+     * One-to-one relation to Contact entity (user's contact info)
+     */
     @OneToOne((type) => Contact, contact => contact.user)
+    @IsOptional()
     contact: Contact;
 
+    /**
+     * One-to-one relation to Station entity (if user is a manager)
+     */
     @OneToOne((type) => Station, station => station.manager, {nullable: true})
+    @IsOptional()
     station: Station;
 
+    /**
+     * One-to-many relation to Ticket entity (tickets sent by user)
+     */
     @OneToMany((type) => Ticket, ticket => ticket.sender)
+    @IsArray()
+    @IsOptional()
     tickets: Ticket[];
 
+    /**
+     * Ticket reply (not persisted, used for serialization)
+     */
+    @IsOptional()
     ticketReply: Reply;
 
+    /**
+     * One-to-many relation to MonthlyReport entity (reports created by user)
+     */
     @OneToMany((type) => MonthlyReport, report => report.createdBy, {nullable: true, cascade: true, onDelete: 'CASCADE', onUpdate: 'CASCADE'})
+    @IsArray()
+    @IsOptional()
     reports: MonthlyReport[];
 
+    /**
+     * Validates a plain password against the user's hashed password
+     * @param password Plain password to validate
+     * @returns Promise<boolean> indicating if password is valid
+     */
     async validatePassword(password: string): Promise<boolean> {
         return bcrypt.compare(password, this.password);
     }
 
+    /**
+     * Hashes a plain password using bcrypt
+     * @param password Plain password to hash
+     * @returns Promise<string> hashed password
+     */
     static async hashPassword(password: string): Promise<string> {
         return bcrypt.hash(password, 10); // 10 salt rounds 
     }

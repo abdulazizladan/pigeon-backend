@@ -13,10 +13,17 @@ export class DispenserService {
     @InjectRepository(Dispenser)
     private readonly dispenserRepository: Repository<Dispenser>
   ) {
-
+    // The dispenserRepository is injected to interact with the Dispenser entity in the database
   }
+
+  /**
+   * Creates a new dispenser record in the database.
+   * @param createDispenserDto - Data Transfer Object containing dispenser details
+   * @returns Success or error response with message
+   */
   async create(createDispenserDto: CreateDispenserDto) {
     try { 
+      // Create and save a new dispenser entity
       const dispenser =  await this.dispenserRepository.create(createDispenserDto)
       await this.dispenserRepository.save(dispenser)
       return {
@@ -25,6 +32,7 @@ export class DispenserService {
         message: "Dispenser added successfully"
       }
     } catch (error) {
+      // Return error message if creation fails
       return {
         success: false,
         message: error.message
@@ -32,10 +40,15 @@ export class DispenserService {
     }
   }
 
+  /**
+   * Retrieves a summary of dispenser statistics (total, active, inactive).
+   * @returns Object containing dispenser stats
+   */
   async getSummary() {
+    // Count total, active, and inactive dispensers
     const totalDispensers = await this.dispenserRepository.count()
-    const activeDispensers = await this.dispenserRepository.count({where: {status: "active"}})
-    const inactiveDispensers = await this.dispenserRepository.count({where: {status: "inactive"}})
+    const activeDispensers = await this.dispenserRepository.count({ where: { status: 'active' as any } })
+    const inactiveDispensers = await this.dispenserRepository.count({ where: { status: 'inactive' as any } })
     return {
       success: true,
       data: {
@@ -47,7 +60,12 @@ export class DispenserService {
     }
   }
 
+  /**
+   * Fetches all dispenser records from the database.
+   * @returns Success response with dispensers or message if none found
+   */
   async findAll() {
+    // Retrieve all dispensers
     const dispensers = await this.dispenserRepository.find()
     try {
       if(dispensers.length != 0){
@@ -64,6 +82,7 @@ export class DispenserService {
         }
       }
     } catch (error) {
+      // Return error message if fetching fails
       return {
         success: false,
         message: error.message
@@ -71,7 +90,13 @@ export class DispenserService {
     }
   }
 
+  /**
+   * Fetches a single dispenser by its ID, including its sales relation.
+   * @param id - The ID of the dispenser to fetch
+   * @returns Success response with dispenser or error if not found
+   */
   async findOne(id: number) {
+    // Find dispenser by ID with related sales
     const dispenser = await this.dispenserRepository.findOne({where: { id: id }, relations: ['sales']})
     try {
       if(dispenser){
@@ -81,9 +106,11 @@ export class DispenserService {
           message: "dispenser fetched successfully"
         }
       }else {
+        // Throw NotFoundException if dispenser does not exist
         throw new NotFoundException();
       }
     } catch (error) {
+      // Return error message if fetching fails
       return {
         success: false,
         message: error.message
@@ -91,8 +118,15 @@ export class DispenserService {
     }
   }
 
+  /**
+   * Updates a dispenser record by its ID.
+   * @param id - The ID of the dispenser to update
+   * @param updateDispenserDto - DTO containing updated dispenser data
+   * @returns Success or error response with message
+   */
   async update(id: number, updateDispenserDto: UpdateDispenserDto) {
     try {
+      // Update dispenser with new data
       await this.dispenserRepository.update(id, updateDispenserDto)
       return {
         success: true,
@@ -100,6 +134,7 @@ export class DispenserService {
         message: "Dispenser updated successfully"
       }
     } catch (error) {
+      // Return error message if update fails
       return {
         success: false,
         message: error.message
@@ -107,14 +142,21 @@ export class DispenserService {
     }
   }
 
+  /**
+   * Deletes a dispenser record by its ID.
+   * @param id - The ID of the dispenser to delete
+   * @returns Success or error response with message
+   */
   remove(id: number) {
     try {
+      // Delete dispenser by ID
       this.dispenserRepository.delete(id)
       return {
         success: true,
         message: "Dispenser deleted successfully"
       }
     } catch (error) {
+      // Return error message if deletion fails
       return {
         success: false,
         message: error.message

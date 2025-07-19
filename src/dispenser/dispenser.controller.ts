@@ -1,3 +1,4 @@
+// Controller for handling dispenser-related endpoints
 import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
 import { DispenserService } from './dispenser.service';
 import { CreateDispenserDto } from './dto/create-dispenser.dto';
@@ -8,14 +9,21 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 
+// Swagger tag for grouping endpoints and requiring Bearer Auth
 @ApiTags('Dispenser')
 @ApiBearerAuth()
+// Main controller for dispenser endpoints, protected by JWT and role guards
 @Controller('dispenser')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class DispenserController {
   
+  // Injects the DispenserService to handle business logic
   constructor(private readonly dispenserService: DispenserService) {}
 
+  /**
+   * Get dispenser statistics (total, active, inactive).
+   * Accessible by admin and director roles only.
+   */
   @Roles(Role.admin, Role.director)
   @ApiOperation(
     {
@@ -28,6 +36,11 @@ export class DispenserController {
     return this.dispenserService.getSummary();
   }
 
+  /**
+   * Create a new dispenser.
+   * Accessible by manager role only.
+   * @param createDispenserDto - DTO containing dispenser details
+   */
   @Roles(Role.manager)
   @ApiOperation(
     {
@@ -40,6 +53,10 @@ export class DispenserController {
     return this.dispenserService.create(createDispenserDto);
   }
 
+  /**
+   * Get all dispensers in the station.
+   * Accessible by director and manager roles.
+   */
   @Roles(Role.director, Role.manager)
   @ApiOperation(
     {
@@ -52,6 +69,11 @@ export class DispenserController {
     return this.dispenserService.findAll();
   }
 
+  /**
+   * Get a dispenser by its ID.
+   * Accessible by director and manager roles.
+   * @param id - The ID of the dispenser
+   */
   @Roles(Role.director, Role.manager)
   @ApiNotFoundResponse({content: {}, description: "Return when not found"})
   @ApiOperation(
@@ -65,6 +87,12 @@ export class DispenserController {
     return this.dispenserService.findOne(id);
   }
 
+  /**
+   * Update an existing dispenser by its ID.
+   * Accessible by manager role only.
+   * @param id - The ID of the dispenser
+   * @param updateDispenserDto - DTO containing updated dispenser data
+   */
   @Roles(Role.manager)
   @ApiOperation(
     {
