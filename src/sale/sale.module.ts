@@ -7,12 +7,12 @@ import { Sale } from './entities/sale.entity';
 
 @Module({
   imports: [
+    DispenserModule,
     TypeOrmModule.forFeature(
       [
         Sale
       ]
     ),
-    DispenserModule
   ],
   controllers: [
     SaleController

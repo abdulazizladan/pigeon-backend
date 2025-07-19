@@ -6,11 +6,9 @@ import { Dispenser } from './entities/dispenser.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature(
-      [
-        Dispenser
-      ]
-    )
+    TypeOrmModule.forFeature([
+      Dispenser
+    ])
   ],
   controllers: [
     DispenserController
@@ -19,7 +17,8 @@ import { Dispenser } from './entities/dispenser.entity';
     DispenserService
   ],
   exports: [
-    DispenserService
+    DispenserService,
+    TypeOrmModule
   ]
 })
 export class DispenserModule {}
