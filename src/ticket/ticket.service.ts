@@ -17,15 +17,22 @@ export class TicketService {
 
     @InjectRepository(Reply)
     private readonly replyRepository: Repository<Reply>
-  ) {
+  ) {}
 
-  }
-
+  /**
+   * Creates a new ticket in the database.
+   * @param createTicketDto - DTO containing ticket details
+   * @returns The created ticket entity
+   */
   async create(createTicketDto: CreateTicketDto) {
     const ticket = this.ticketRepository.create(createTicketDto);
     return await this.ticketRepository.save(ticket); 
   }
 
+  /**
+   * Retrieves statistics about tickets (total, active, resolved, dismissed).
+   * @returns An object containing ticket stats and a message
+   */
   async getStats() {
     const activeTickets = await this.ticketRepository.count({where: {status: Status.active}})
     const resolvedTickets = await this.ticketRepository.count({where: {status: Status.resolved}})
@@ -43,6 +50,13 @@ export class TicketService {
     }
   }
 
+  /**
+   * Adds a reply to a specific ticket.
+   * @param ticketID - The ID of the ticket to reply to
+   * @param replyData - DTO containing reply details
+   * @returns The created reply entity
+   * @throws NotFoundException if the ticket does not exist
+   */
   async addReply(ticketID: number, replyData: CreateReplyDto) {
     const ticket = await this.ticketRepository.findOne({
       where: { id: ticketID },
@@ -65,6 +79,10 @@ export class TicketService {
     return reply;
   }
 
+  /**
+   * Retrieves all tickets, including their sender relation.
+   * @returns An object with all tickets and a message
+   */
   async findAll() {
     const ticket = await this.ticketRepository.find({
       relations: [
@@ -85,6 +103,11 @@ export class TicketService {
     }
   }
 
+  /**
+   * Retrieves a single ticket by its ID, including replies and sender.
+   * @param id - The ID of the ticket
+   * @returns An object with the ticket and a message
+   */
   async findOne(id: number) {
     const ticket = await this.ticketRepository.findOne(
       {
@@ -109,6 +132,11 @@ export class TicketService {
     }
   }
 
+  /**
+   * Finds all tickets sent by a user with the given email.
+   * @param email - The email of the sender
+   * @returns An array of tickets sent by the user
+   */
   findByEmail(email: string) {
     return this.ticketRepository.find({
       where: {"sender": {email}},
@@ -118,7 +146,12 @@ export class TicketService {
     })
   }
 
-
+  /**
+   * Updates a ticket by its ID.
+   * @param id - The ID of the ticket
+   * @param updateTicketDto - DTO containing updated ticket data
+   * @returns An object with the update result and a message
+   */
   update(id: number, updateTicketDto: UpdateTicketDto) {
     try {
       const ticket = this.ticketRepository.update({id}, updateTicketDto)
@@ -137,9 +170,9 @@ export class TicketService {
   }
 
   /**
-   * 
-   * @param id 
-   * @returns delete ticket status message
+   * Deletes a ticket by its ID.
+   * @param id - The ID of the ticket
+   * @returns An object with the deletion status and a message
    */
   remove(id: number) {
     try {

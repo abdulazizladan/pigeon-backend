@@ -13,6 +13,11 @@ export class StationService {
     private readonly stationRepository: Repository<Station>,
   ) {}
 
+  /**
+   * Creates a new station in the database.
+   * @param createStationDto - DTO containing station details
+   * @returns An object indicating success or failure and a message
+   */
   async create(createStationDto: CreateStationDto) {
     const station = await this.stationRepository.create(createStationDto);
     try {
@@ -29,6 +34,10 @@ export class StationService {
     }
   }
 
+  /**
+   * Retrieves a summary of station statistics (total, active, inactive).
+   * @returns An object containing station stats and a message
+   */
   async getSummary() {
     const totalStations = await this.stationRepository.count();
     const activeStations = await this.stationRepository.count({where: { status: 'active' }});
@@ -45,6 +54,10 @@ export class StationService {
     }
   }
 
+  /**
+   * Retrieves all stations from the database.
+   * @returns An object with all stations or a message if none are found
+   */
   async findAll() {
     const stations = await this.stationRepository.find();
     try {
@@ -68,6 +81,11 @@ export class StationService {
     }
   }
 
+  /**
+   * Retrieves a single station by its ID, including the manager relation.
+   * @param id - The ID of the station
+   * @returns An object with the station or a message if not found
+   */
   async findOne(id: number) {
     const station = await this.stationRepository.findOne(
       {
@@ -99,6 +117,12 @@ export class StationService {
       }
   }
 
+  /**
+   * Updates a station by its ID.
+   * @param id - The ID of the station
+   * @param updateStationDto - DTO containing updated station data
+   * @returns An object indicating success or failure and a message
+   */
   update(id: number, updateStationDto: UpdateStationDto) {
     try {
       this.stationRepository.update(id, updateStationDto);
@@ -115,6 +139,11 @@ export class StationService {
     }
   }
 
+  /**
+   * Deletes a station by its ID.
+   * @param id - The ID of the station
+   * @returns An object indicating success or failure and a message
+   */
   remove(id: number) {
     try {
       this.stationRepository.delete(id);

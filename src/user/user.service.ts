@@ -22,9 +22,9 @@ export class UserService {
   ) {}
 
   /**
-   * 
-   * @param createUserDto 
-   * @returns new user
+   * Creates a new user in the database, including related contact and info.
+   * @param createUserDto - DTO containing user, contact, and info details
+   * @returns An object indicating success or failure, the user data, and a message
    */
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await User.hashPassword(createUserDto.password);
@@ -50,8 +50,8 @@ export class UserService {
   }
 
   /**
-   * 
-   * @returns user stats by status and roles
+   * Retrieves statistics about users by status and roles.
+   * @returns An object containing user stats and a message
    */
   async getStats() {
     const totalUsers = await this.userRepository.count()
@@ -84,8 +84,8 @@ export class UserService {
   }
 
   /**
-   * 
-   * @returns array of users
+   * Retrieves all users, including their info, contact, and station relations.
+   * @returns An array of users or a message if none are found
    */
   async findAll() {
     const users = await this.userRepository.find({
@@ -121,9 +121,9 @@ export class UserService {
   }
 
   /**
-   * 
-   * @param email 
-   * @returns single user by email
+   * Retrieves a single user by email, including info, contact, reports, and tickets.
+   * @param email - The email of the user
+   * @returns An object with the user or a message if not found
    */
   async findOne(email: string): Promise<any> {
     try {
@@ -162,9 +162,9 @@ export class UserService {
   }
 
   /**
-   * 
-   * @param email 
-   * @returns 
+   * Finds a user by email.
+   * @param email - The email of the user
+   * @returns An object with the user or a message if not found
    */
   async findByEmail(email: string): Promise<any> {
     try{
@@ -192,10 +192,10 @@ export class UserService {
   }
 
   /**
-   * 
-   * @param email 
-   * @param updateUserDto 
-   * @returns 
+   * Updates a user by email.
+   * @param email - The email of the user
+   * @param updateUserDto - DTO containing updated user data
+   * @returns An object indicating success or failure and a message
    */
   async update(email: string, updateUserDto: UpdateUserDto) {
     try {
@@ -229,9 +229,9 @@ export class UserService {
   }
 
   /**
-   * 
-   * @param email 
-   * @returns 
+   * Deletes a user by email.
+   * @param email - The email of the user
+   * @returns An object indicating success or failure and a message
    */
   async remove(email: string) {
     const user  = await this.userRepository.findOne(
@@ -249,7 +249,7 @@ export class UserService {
       } else {
         return {
           success: false,
-          messsage: `User with email ${email} not found`
+          message: `User with email ${email} not found`
         }
       }
     } catch (error) {

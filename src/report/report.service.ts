@@ -11,9 +11,13 @@ export class ReportService {
   constructor(
     @InjectRepository(MonthlyReport)
     private readonly reportRepository: Repository<MonthlyReport>
-  ) {
+  ) {}
 
-  }
+  /**
+   * Creates a new monthly report in the database.
+   * @param createReportDto - DTO containing report details
+   * @returns An object indicating success or failure, the report data, and a message
+   */
   async create(createReportDto: CreateReportDto) {
     const report = await this.reportRepository.create(createReportDto)
     try {
@@ -31,6 +35,10 @@ export class ReportService {
     }
   }
 
+  /**
+   * Retrieves all monthly reports from the database.
+   * @returns An object with all reports or a message if none are found
+   */
   async findAll() {
     const reports = await this.reportRepository.find();
     if( reports.length === 0) {
@@ -48,6 +56,11 @@ export class ReportService {
     }
   }
 
+  /**
+   * Retrieves a single report by its ID, including the createdBy relation.
+   * @param id - The ID of the report
+   * @returns An object with the report or a message if not found
+   */
   async findOne(id: number) {
     try {
       const report = await this.reportRepository.findOne(
@@ -75,6 +88,12 @@ export class ReportService {
     }
   }
 
+  /**
+   * Updates a report by its ID.
+   * @param id - The ID of the report
+   * @param updateReportDto - DTO containing updated report data
+   * @returns An object indicating success or failure and a message
+   */
   update(id: number, updateReportDto: UpdateReportDto) {
     try {
       this.reportRepository.update(id, updateReportDto);
@@ -93,6 +112,11 @@ export class ReportService {
 
   }
 
+  /**
+   * Deletes a report by its ID.
+   * @param id - The ID of the report
+   * @returns An object indicating success or failure and a message
+   */
   remove(id: number) {
     try {
       this.reportRepository.delete(id);
