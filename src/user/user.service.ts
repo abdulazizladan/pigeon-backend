@@ -38,7 +38,7 @@ export class UserService {
       await this.userRepository.save(user);
       return {
         success: true,
-        data: createUserDto,
+        data: user,
         message: 'User added successfully'
       }
     } catch (error) {
@@ -85,7 +85,7 @@ export class UserService {
 
   /**
    * Retrieves all users, including their info, contact, and station relations.
-   * @returns An array of users or a message if none are found
+   * @returns An object with users array and a message
    */
   async findAll() {
     const users = await this.userRepository.find({
@@ -104,18 +104,15 @@ export class UserService {
       ]
     });
     try {
-      if(users.length === 0) {
-        return {
-          message: 'No users found'
-        }
-      }else{
-        return users;
+      return {
+        success: true,
+        data: users,
+        message: users.length === 0 ? 'No users found' : 'Users fetched successfully'
       }
-      
     } catch (error) {
       return{
-        message: 'Error fetching users',
-        error: error
+        success: false,
+        message: 'Error fetching users'
       }
     }
   }
@@ -123,7 +120,7 @@ export class UserService {
   /**
    * Retrieves a single user by email, including info, contact, reports, and tickets.
    * @param email - The email of the user
-   * @returns An object with the user or a message if not found
+   * @returns An object with the user or not found message
    */
   async findOne(email: string): Promise<any> {
     try {
@@ -146,8 +143,8 @@ export class UserService {
         }
       }else {
         return {
-          success: true,
-          user: null,
+          success: false,
+          data: null,
           message: "User not found"
         }
       }
@@ -208,9 +205,10 @@ export class UserService {
       );
       if(user) {
         await this.userRepository.update(email, updateUserDto);
+        const updated = await this.userRepository.findOne({ where: { email }, relations: ['info','contact','station']});
         return {
           success: true,
-          data: updateUserDto,
+          data: updated,
           message: 'User updated successfully'
         }
       }else{
@@ -241,7 +239,7 @@ export class UserService {
   )
     try {
       if(user) {
-        this.userRepository.remove(user);
+        await this.userRepository.remove(user);
         return {
           success: true,
           message: "User deleted successfully"

@@ -147,9 +147,17 @@ export class TicketController {
    * @access admin
    * @param id - The ID of the ticket
    */
-  /**
   @ApiOperation({summary: "Remove ticket"})
-  @ApiOkResponse({ description: 'Ticket deleted successfully.' })
+  @ApiOkResponse({ 
+    description: 'Ticket deleted successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Ticket deleted successfully' }
+      }
+    }
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin role allowed.' })
   @Delete(':id')
@@ -157,5 +165,4 @@ export class TicketController {
   remove(@Param('id') id: string) {
     return this.ticketService.remove(+id);
   }
-  **/
 }

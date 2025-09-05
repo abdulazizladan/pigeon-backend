@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { SaleService } from './sale.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiUnauthorizedResponse, ApiForbiddenResponse, ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiUnauthorizedResponse, ApiForbiddenResponse, ApiOkResponse, ApiNotFoundResponse, ApiBody, ApiCreatedResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
@@ -24,9 +24,36 @@ export class SaleController {
    */
   @Roles(Role.manager)
   @ApiOperation({ summary: 'Create a new sale', description: 'Create a new sale' })
-  @ApiOkResponse({ description: 'Sale created successfully.' })
+  @ApiCreatedResponse({ 
+    description: 'Sale created successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/CreateSaleDto' },
+        message: { type: 'string', example: 'Sale created successfully' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
+  @ApiBody({
+    type: CreateSaleDto,
+    examples: {
+      default: {
+        summary: 'Sample create sale payload',
+        value: {
+          pumpId: 1,
+          pricePerLitre: 650.50,
+          openingMeterReading: 1000.0,
+          closingMeterReading: 1200.0,
+          transactionDate: '2024-01-15T10:30:00Z',
+          dispenserId: 1
+        }
+      }
+    }
+  })
   @Post()
   create(@Body() createSaleDto: CreateSaleDto) {
     return this.saleService.create(createSaleDto);
@@ -73,9 +100,32 @@ export class SaleController {
    */
   @Roles(Role.manager)
   @ApiOperation({ summary: 'Update a sale', description: 'Update a sale' })
-  @ApiOkResponse({ description: 'Sale updated successfully.' })
+  @ApiOkResponse({ 
+    description: 'Sale updated successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/UpdateSaleDto' },
+        message: { type: 'string', example: 'Sale updated successfully' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
+  @ApiBody({
+    type: UpdateSaleDto,
+    examples: {
+      default: {
+        summary: 'Sample update sale payload',
+        value: {
+          pricePerLitre: 700.00,
+          closingMeterReading: 1250.0
+        }
+      }
+    }
+  })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSaleDto: UpdateSaleDto) {
     return this.saleService.update(+id, updateSaleDto);
@@ -87,15 +137,22 @@ export class SaleController {
    * @access manager
    * @param id - The ID of the sale
    */
-  /**
   @Roles(Role.manager)
   @ApiOperation({ summary: 'Delete a sale', description: 'Delete a sale' })
-  @ApiOkResponse({ description: 'Sale deleted successfully.' })
+  @ApiOkResponse({ 
+    description: 'Sale deleted successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Sale deleted successfully' }
+      }
+    }
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.saleService.remove(+id);
   }
-  **/
 }
