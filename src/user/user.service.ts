@@ -1,9 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { Info } from './entities/info.entity';
 import { Contact } from './entities/contact.entity';
 import { Status } from './enums/status.enum';
@@ -195,35 +195,26 @@ export class UserService {
    * @returns An object indicating success or failure and a message
    */
   async update(email: string, updateUserDto: UpdateUserDto) {
-    try {
-      const user = await this.userRepository.findOne(
-        {
-          where: {
-            email: email
-          }
-        }
-      );
-      if(user) {
-        await this.userRepository.update(email, updateUserDto);
-        const updated = await this.userRepository.findOne({ where: { email }, relations: ['info','contact','station']});
-        return {
-          success: true,
-          data: updated,
-          message: 'User updated successfully'
-        }
-      }else{
-        return {
-          success: false,
-          message: `User with email ${email} not found`
-        }
-      }
+
+    const updateResult: UpdateResult = await this.userRepository.update(
+      {email: email},
+      updateUserDto
+    )
+    if(updateResult.affected === 0) {
+      throw new NotFoundException(`User with email ${email} not found`)
     }
-    catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+
+    const updatedUser = this.userRepository.findOne({
+      where: {email},
+      relations: ['contact', 'info']
+    })
+
+    if(!updatedUser) {
+      throw new NotFoundException('User not found')
     }
+
+    return updatedUser;
+    
   }
 
   /**

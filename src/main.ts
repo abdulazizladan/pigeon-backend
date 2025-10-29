@@ -15,7 +15,6 @@ async function bootstrap() {
     .setBasePath('localhost')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Fueling station management app')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
