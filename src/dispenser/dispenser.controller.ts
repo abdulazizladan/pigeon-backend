@@ -170,7 +170,7 @@ export class DispenserController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only director and manager roles allowed.' })
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: string) {
     return this.dispenserService.findOne(id);
   }
 
@@ -211,7 +211,7 @@ export class DispenserController {
   })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDispenserDto: UpdateDispenserDto) {
-    return this.dispenserService.update(+id, updateDispenserDto);
+    return this.dispenserService.update(id, updateDispenserDto);
   }
 
   /**
@@ -236,7 +236,7 @@ export class DispenserController {
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.dispenserService.remove(+id);
+    return this.dispenserService.remove(id);
   }
 
 }

@@ -105,7 +105,7 @@ export class StationController {
   @UseInterceptors(ClassSerializerInterceptor)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.stationService.findOne(+id);
+    return this.stationService.findOne(id);
   }
 
   /**

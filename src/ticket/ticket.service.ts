@@ -57,7 +57,7 @@ export class TicketService {
    * @returns The created reply entity
    * @throws NotFoundException if the ticket does not exist
    */
-  async addReply(ticketID: number, replyData: CreateReplyDto) {
+  async addReply(ticketID: string, replyData: CreateReplyDto) {
     const ticket = await this.ticketRepository.findOne({
       where: { id: ticketID },
       relations: ['replies'], // Load existing replies to update the array
@@ -108,7 +108,7 @@ export class TicketService {
    * @param id - The ID of the ticket
    * @returns An object with the ticket and a message
    */
-  async findOne(id: number) {
+  async findOne(id: string) {
     const ticket = await this.ticketRepository.findOne(
       {
         relations: [
@@ -152,7 +152,7 @@ export class TicketService {
    * @param updateTicketDto - DTO containing updated ticket data
    * @returns An object with the update result and a message
    */
-  update(id: number, updateTicketDto: UpdateTicketDto) {
+  update(id: string, updateTicketDto: UpdateTicketDto) {
     try {
       const ticket = this.ticketRepository.update({id}, updateTicketDto)
       return {

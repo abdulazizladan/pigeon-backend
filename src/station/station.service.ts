@@ -86,7 +86,7 @@ export class StationService {
    * @param id - The ID of the station
    * @returns An object with the station or a message if not found
    */
-  async findOne(id: number) {
+  async findOne(id: string) {
     const station = await this.stationRepository.findOne(
       {
         where: { id },

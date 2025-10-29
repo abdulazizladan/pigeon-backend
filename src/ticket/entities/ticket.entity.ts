@@ -5,8 +5,8 @@ import { User } from "src/user/entities/user.entity";
 
 @Entity({ name: 'Ticket' })
 export class Ticket {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ nullable: false })
   title: string;

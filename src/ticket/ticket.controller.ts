@@ -57,7 +57,7 @@ export class TicketController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin, director, and manager roles allowed.' })
   @Post(':ticketID/reply')
-  async addReply(@Param('ticketID') ticketID: number,
+  async addReply(@Param('ticketID') ticketID: string,
   @Body() createReplyDto: CreateReplyDto) {
     try {
       const reply = await this.ticketService.addReply(ticketID, createReplyDto);
@@ -121,7 +121,7 @@ export class TicketController {
   @Roles(Role.admin, Role.director, Role.manager)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.ticketService.findOne(+id);
+    return this.ticketService.findOne(id);
   }
 
   /**
@@ -138,7 +138,7 @@ export class TicketController {
   @Patch(':id')
   @Roles(Role.admin)
   update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto) {
-    return this.ticketService.update(+id, updateTicketDto);
+    return this.ticketService.update(id, updateTicketDto);
   }
 
   /**

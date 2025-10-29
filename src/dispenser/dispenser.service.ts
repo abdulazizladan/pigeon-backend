@@ -95,9 +95,20 @@ export class DispenserService {
    * @param id - The ID of the dispenser to fetch
    * @returns Success response with dispenser or error if not found
    */
-  async findOne(id: number) {
+  async findOne(id: string) {
     // Find dispenser by ID with related sales
-    const dispenser = await this.dispenserRepository.findOne({where: { id: id }, relations: ['sales']})
+    const dispenser = await this.dispenserRepository.findOne(
+      {
+        where: 
+        { 
+          id: id 
+        }, 
+        relations: 
+        [
+          'sales'
+        ]
+      }
+    )
     try {
       if(dispenser){
         return {
@@ -124,7 +135,7 @@ export class DispenserService {
    * @param updateDispenserDto - DTO containing updated dispenser data
    * @returns Success or error response with message
    */
-  async update(id: number, updateDispenserDto: UpdateDispenserDto) {
+  async update(id: string, updateDispenserDto: UpdateDispenserDto) {
     try {
       // Update dispenser with new data
       await this.dispenserRepository.update(id, updateDispenserDto)
@@ -147,7 +158,7 @@ export class DispenserService {
    * @param id - The ID of the dispenser to delete
    * @returns Success or error response with message
    */
-  remove(id: number) {
+  remove(id: string) {
     try {
       // Delete dispenser by ID
       this.dispenserRepository.delete(id)

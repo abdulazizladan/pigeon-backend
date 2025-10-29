@@ -9,9 +9,9 @@ export class Dispenser {
     /**
      * Unique identifier for the dispenser (Primary Key)
      */
-    @PrimaryGeneratedColumn({})
-    @IsNumber()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    @IsString()
+    id: string;
 
     /**
      * First name of the dispenser

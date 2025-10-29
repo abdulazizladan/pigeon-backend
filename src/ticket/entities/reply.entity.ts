@@ -4,8 +4,8 @@ import { User } from "src/user/entities/user.entity";
 
 @Entity({ name: "Reply" })
 export class Reply {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToOne(() => Ticket, ticket => ticket.replies)
   @JoinColumn({ name: 'ticket_id' }) // Optional: Only if you want custom column name

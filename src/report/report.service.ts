@@ -61,7 +61,7 @@ export class ReportService {
    * @param id - The ID of the report
    * @returns An object with the report or a message if not found
    */
-  async findOne(id: number) {
+  async findOne(id: string) {
     try {
       const report = await this.reportRepository.findOne(
         {
@@ -94,7 +94,7 @@ export class ReportService {
    * @param updateReportDto - DTO containing updated report data
    * @returns An object indicating success or failure and a message
    */
-  update(id: number, updateReportDto: UpdateReportDto) {
+  update(id: string, updateReportDto: UpdateReportDto) {
     try {
       this.reportRepository.update(id, updateReportDto);
       return {
@@ -117,7 +117,7 @@ export class ReportService {
    * @param id - The ID of the report
    * @returns An object indicating success or failure and a message
    */
-  remove(id: number) {
+  remove(id: string) {
     try {
       this.reportRepository.delete(id);
       return {

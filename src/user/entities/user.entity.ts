@@ -10,15 +10,16 @@ import { Ticket } from "src/ticket/entities/ticket.entity";
 import { Exclude } from "class-transformer";
 import { Reply } from "src/ticket/entities/reply.entity";
 import { IsEmail, IsEnum, IsString, IsOptional, IsDate, IsArray, IsNumber } from "class-validator";
+import { Sale } from "src/sale/entities/sale.entity";
 
 @Entity({name: "User"})
 export class User {
     /**
      * Unique identifier for the user (Primary Key)
      */
-    @PrimaryGeneratedColumn({})
-    @IsNumber()
-    id:number;
+    @PrimaryGeneratedColumn('uuid')
+    @IsString()
+    id: string;
      
     /**
      * Unique email address of the user
@@ -61,7 +62,7 @@ export class User {
      */
     @OneToOne((type) => Info, info => info.user) 
     @IsOptional()
-    info: Info;
+    info: Info; 
 
     /**
      * One-to-one relation to Contact entity (user's contact info)
@@ -116,6 +117,9 @@ export class User {
     static async hashPassword(password: string): Promise<string> {
         return bcrypt.hash(password, 10); // 10 salt rounds 
     }
+
+    @OneToMany((type) => Sale, sale => sale.recordedBy)
+    sales: Sale[];
 }
 
 

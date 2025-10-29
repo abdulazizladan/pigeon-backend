@@ -5,8 +5,8 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, On
 @Entity({name: "MonthlyReport"})
 export class MonthlyReport {
   
-    @PrimaryGeneratedColumn({})
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column('int')
     month: number; // 1-12

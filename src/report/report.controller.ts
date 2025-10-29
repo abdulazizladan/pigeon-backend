@@ -92,7 +92,7 @@ export class ReportController {
   @ApiForbiddenResponse({ description: 'Forbidden. Only director and manager roles allowed.' })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.reportService.findOne(+id);
+    return this.reportService.findOne(id);
   }
 
   /**
@@ -109,7 +109,7 @@ export class ReportController {
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto) {
-    return this.reportService.update(+id, updateReportDto);
+    return this.reportService.update(id, updateReportDto);
   }
 
     /**
@@ -134,6 +134,6 @@ export class ReportController {
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.reportService.remove(+id);
+    return this.reportService.remove(id);
   }
 }

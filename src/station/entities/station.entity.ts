@@ -3,13 +3,12 @@ import { Sale } from "src/sale/entities/sale.entity";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { IsString, IsNumber, IsOptional, IsEnum } from "class-validator";
+import { Pump } from "./pump.entity";
 
 @Entity({name: "Station"})
 export class Station {
-    @PrimaryGeneratedColumn({})
-    // Unique identifier for the station
-    @IsNumber()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({})
     // Name of the station
@@ -71,4 +70,7 @@ export class Station {
     // Status of the station (active or inactive)
     @IsEnum(["active", "inactive"])
     status: "active" | "inactive";
+
+    @OneToMany(() => Pump, (pump) => pump.station)
+    pumps: Pump[];
 }
