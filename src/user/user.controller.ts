@@ -11,7 +11,6 @@ import { Roles } from 'src/auth/roles.decorator';
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('user')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -20,6 +19,7 @@ export class UserController {
    * Accessible by admin only.
    * @access admin
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.admin)
   @ApiOkResponse({ description: 'User created successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
@@ -54,9 +54,9 @@ export class UserController {
   /**
    * Get user stats by role and status.
    * Accessible by admin and director.
-   * @access admin, director
+   * @access all
    */
-  @Roles(Role.admin, Role.director)
+  //@Roles(Role.admin, Role.director)
   @ApiOkResponse({description: "User stats found"})
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin and director roles allowed.' })
@@ -88,6 +88,7 @@ export class UserController {
    * @access admin
    * @param email - The email of the user
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.admin)
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({ summary: 'Find one user' })
@@ -106,6 +107,7 @@ export class UserController {
    * @param email - The email of the user
    * @param updateUserDto - DTO containing updated user data
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.admin)
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
@@ -141,6 +143,7 @@ export class UserController {
    * @access admin
    * @param email - The email of the user
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.admin)
   @ApiOperation({ summary: 'Remove user' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
