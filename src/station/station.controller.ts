@@ -55,20 +55,27 @@ export class StationController {
   @ApiBody({
     type: CreateStationDto,
     examples: {
-      default: {
-        summary: 'Sample create station payload',
+      fullCreation: {
+        summary: 'Example request for creating a new station with manager and pumps',
         value: {
-          name: 'Main Fuel Station',
-          address: '123 Main Street',
-          ward: 'Central Ward',
-          lga: 'Lagos Island',
-          state: 'Lagos',
-          longitude: 3.3792,
-          latitude: 6.5244,
-          pricePerLiter: 650.50
-        }
-      }
-    }
+          name: "Eagle Fuel Depot",
+          address: "456 Commerce Road",
+          ward: "Industrial",
+          lga: "Lekki",
+          state: "Lagos",
+          longitude: 3.4206,
+          latitude: 6.4531,
+          pricePerLiter: 165.00,
+          // Manager ID must be an existing User ID (UUID)
+          managerId: "f0e1d2c3-b4a5-6789-0123-456789abcdef", 
+          pumps: [
+            { pumpNumber: 1, dispensedProduct: "PETROL" },
+            { pumpNumber: 2, dispensedProduct: "DIESEL" },
+            { pumpNumber: 3, dispensedProduct: "PETROL" }
+          ]
+        } as CreateStationDto,
+      },
+    },
   })
   @Post()
   create(@Body() createStationDto: CreateStationDto) {
@@ -145,7 +152,7 @@ export class StationController {
   })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto) {
-    return this.stationService.update(+id, updateStationDto);
+    return this.stationService.update(id, updateStationDto);
   }
 
   /**
@@ -170,7 +177,7 @@ export class StationController {
   @ApiForbiddenResponse({ description: 'Forbidden. Only director role allowed.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.stationService.remove(+id);
+    return this.stationService.remove(id);
   }
 
 }

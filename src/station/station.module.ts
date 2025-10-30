@@ -3,12 +3,16 @@ import { StationService } from './station.service';
 import { StationController } from './station.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Station } from './entities/station.entity';
+import { Pump } from './entities/pump.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature(
       [
-        Station
+        Station,
+        Pump,
+        User
       ]
     )
   ],

@@ -44,7 +44,7 @@ export class DispenserController {
         message: { type: 'string', example: 'Dispenser stats found' }
       }
     }
-  })
+  }) 
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin and director roles allowed.' })
   @Get('stats')
