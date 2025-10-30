@@ -11,7 +11,7 @@ import { Role } from 'src/auth/enums/role.enum';
 @ApiTags()
 @ApiBearerAuth()
 @Controller('report')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+//@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class ReportController {
 
   constructor(private readonly reportService: ReportService) {}

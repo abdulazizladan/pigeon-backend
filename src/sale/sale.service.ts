@@ -68,15 +68,13 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     closingMeterReading: createSaleDto.closingMeterReading,
     
     // Calculated fields
-    volumeLiters: volumeLiters,
-    totalPrice: totalPrice,
 
     // Relationships
     pump: pump, // Link to the Pump
     station: pump.station, // Link to the Station (derived from Pump)
     recordedBy: user, // Link to the recording User
   });
-
+ 
   return this.saleRepository.save(sale);
 }
   /**
@@ -84,7 +82,14 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
    * @returns An array of all sale entities
    */
   async findAll(): Promise<Sale[]> {
-    return this.saleRepository.find({ relations: ['dispenser', 'station'] });
+    return this.saleRepository.find(
+      /**{ relations: 
+        [
+          'dispenser', 
+          'station'
+        ]
+      }**/
+    );
   }
 
   /**
@@ -95,7 +100,10 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   async findOne(id: string): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
       where: { id },
-      relations: ['dispenser', 'station'],
+      relations: [
+        'dispenser', 
+        'station'
+      ],
     });
     if (!sale) {
       throw new NotFoundException(`Sale record with ID ${id} not found`);

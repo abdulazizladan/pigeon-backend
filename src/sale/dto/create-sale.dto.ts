@@ -17,7 +17,7 @@ enum Product {
     GAS = 'GAS', // Assumes LPG or similar
     KEROSENE = 'KEROSENE',
   }
-  
+
 export class CreateSaleDto {
     /**
      * The unique identifier of the dispenser (pump) used for the sale.
@@ -27,10 +27,19 @@ export class CreateSaleDto {
         description: 'UUID of the dispenser used for the sale.',
         example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     })
-    @IsUUID()
     @IsNotEmpty()
     dispenserId: string;
 
+    /**
+     * The unique identifier of the station the sale.
+     * Maps to the 'station' relationship in the entity.
+     */
+    @ApiProperty({
+        description: 'UUID of the station where the sale was made',
+        example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
+    })
+    @IsNotEmpty()
+    stationId: string;
     /**
      * The type of fuel product sold. (e.g., PETROL, DIESEL)
      */

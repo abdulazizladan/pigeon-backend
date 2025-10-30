@@ -14,7 +14,7 @@ import { Role } from 'src/auth/enums/role.enum';
 @ApiBearerAuth()
 // Main controller for dispenser endpoints, protected by JWT and role guards
 @Controller('dispenser')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+//@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class DispenserController {
   
   // Injects the DispenserService to handle business logic

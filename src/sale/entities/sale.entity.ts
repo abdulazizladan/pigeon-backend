@@ -11,7 +11,7 @@ enum Product {
     KEROSENE = 'KEROSENE',
   }
 
-  @Entity({ name: 'sales' }) // Use plural, lowercase name convention
+  @Entity({ name: 'Sale' }) // Use plural, lowercase name convention
   export class Sale {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -35,33 +35,6 @@ enum Product {
       name: 'price_per_litre',
     })
     pricePerLitre: number;
-
-    
-  
-    /**
-     * The total volume (in liters) of the fuel dispensed.
-     * Calculated from closingMeterReading - openingMeterReading.
-     */
-    @Column({
-      type: 'decimal',
-      precision: 10,
-      scale: 3, // Up to 3 decimal places for volume
-      nullable: false,
-      name: 'volume_liters',
-    })
-    volumeLiters: number;
-  
-    /**
-     * The total monetary value of the sale (volumeLiters * pricePerLitre).
-     */
-    @Column({
-      type: 'decimal',
-      precision: 12,
-      scale: 2, // 2 decimal places for currency
-      nullable: false,
-      name: 'total_price',
-    })
-    totalPrice: number;
   
     /**
      * The reading on the dispenser before the transaction started.

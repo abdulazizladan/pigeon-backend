@@ -46,7 +46,7 @@ enum Product {
 @ApiTags('Sales Management')
 @ApiBearerAuth()
 @Controller('sales') // Changed to plural for RESTful standard
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+//@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SaleController {
   constructor(private readonly saleService: SaleService) {}
 
@@ -68,7 +68,8 @@ export class SaleController {
           pricePerLitre: 650.5,
           openingMeterReading: 1000.0,
           closingMeterReading: 1200.0,
-          dispenserId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', // Updated dispenserId to UUID
+          dispenserId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+          stationId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
         } as CreateSaleDto, // Added type assertion for better structure
       },
     },
