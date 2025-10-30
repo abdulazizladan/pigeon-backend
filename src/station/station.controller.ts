@@ -141,13 +141,23 @@ export class StationController {
   @ApiBody({
     type: UpdateStationDto,
     examples: {
-      default: {
-        summary: 'Sample update station payload',
-        value: {
-          name: 'Updated Station Name',
-          pricePerLiter: 700.00
+        updateCoreDetailsAndManager: {
+            summary: 'Update price, location, and reassign the station manager',
+            value: {
+                pricePerLiter: 168.00,
+                lga: "Ikeja",
+                status: "active",
+                // Reassign manager to an existing User ID (UUID)
+                managerId: "12345678-abcd-ef01-2345-67890abcdef0",
+            } as UpdateStationDto,
+        },
+        unassignManager: {
+            summary: 'Unassign the current manager and update the address',
+            value: {
+                address: "New Address Road 789",
+                managerId: null, // Set managerId to null/empty string to unassign the manager
+            } as UpdateStationDto,
         }
-      }
     }
   })
   @Patch(':id')
