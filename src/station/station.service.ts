@@ -196,7 +196,7 @@ export class StationService {
               // Find the new manager
               const foundManager = await this.userRepository.findOne({ where: { id: managerId } });
               if (!foundManager) {
-                  return { success: false, message: `User with ID ${managerId} (manager) not found.` };
+                  return { success: false, message: `Manager not found.` };
               }
               managerToAssign = foundManager;
           }

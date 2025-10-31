@@ -7,6 +7,7 @@ import { Sale } from './entities/sale.entity';
 import { Dispenser } from 'src/dispenser/entities/dispenser.entity';
 import { Pump } from 'src/station/entities/pump.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Station } from 'src/station/entities/station.entity';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { User } from 'src/user/entities/user.entity';
         Sale,
         Dispenser,
         Pump,
-        User
+        User,
+        Station
       ]
     ),
   ],

@@ -9,18 +9,19 @@ import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Pump } from 'src/station/entities/pump.entity';
+import { Station } from 'src/station/entities/station.entity';
 
 @Injectable()
 export class SaleService {
   constructor(
     @InjectRepository(Sale)
     private readonly saleRepository: Repository<Sale>,
-    @InjectRepository(Dispenser)
-    private readonly dispenserRepository: Repository<Dispenser>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Pump)
-    private readonly pumpRepository: Repository<Pump>
+    private readonly pumpRepository: Repository<Pump>,
+    @InjectRepository(Station)
+    private readonly stationRepository: Repository<Station>
   ) {}
 
   // --- CRUD Methods (Refactored for cleaner data/error handling) ---
@@ -34,12 +35,17 @@ export class SaleService {
 async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   // 1. Fetch related entities (Pump and User)
   const pump = await this.pumpRepository.findOne({
-    where: { id: createSaleDto.dispenserId },
-    relations: ['station'], // Eagerly load the Station relation
+    // IMPORTANT: Using pumpId from DTO
+    where: { 
+      id: createSaleDto.pumpId 
+    }, 
+    relations: [
+      'station'
+    ], // Eagerly load the Station relation
   });
 
   if (!pump) {
-    throw new NotFoundException(`Pump (Dispenser) with ID ${createSaleDto.dispenserId} not found`);
+    throw new NotFoundException(`Pump with ID ${createSaleDto.pumpId} not found`);
   }
 
   const user = await this.userRepository.findOne({
@@ -57,7 +63,8 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     throw new BadRequestException('Closing meter reading must be greater than the opening meter reading.');
   }
 
-  const totalPrice = volumeLiters * createSaleDto.pricePerLitre;
+  // Calculate total price and round to 4 decimal places for monetary consistency
+  const totalPrice = parseFloat((volumeLiters * createSaleDto.pricePerLitre).toFixed(4)); 
 
   // 3. Create and Save the Sale entity
   const sale = this.saleRepository.create({
@@ -68,6 +75,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     closingMeterReading: createSaleDto.closingMeterReading,
     
     // Calculated fields
+    totalPrice: totalPrice, // CRITICAL: Now correctly assigning the calculated field
 
     // Relationships
     pump: pump, // Link to the Pump
@@ -77,18 +85,19 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
  
   return this.saleRepository.save(sale);
 }
+
   /**
    * Get all sales records.
    * @returns An array of all sale entities
    */
   async findAll(): Promise<Sale[]> {
     return this.saleRepository.find(
-      /**{ relations: 
+      { relations: 
         [
-          'dispenser', 
+          'pump', 
           'station'
         ]
-      }**/
+      }
     );
   }
 
@@ -101,14 +110,34 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
       where: { id },
       relations: [
-        'dispenser', 
-        'station'
+        'pump', 
+        'station',
+        'recordedBy'
       ],
     });
     if (!sale) {
       throw new NotFoundException(`Sale record with ID ${id} not found`);
     }
     return sale;
+  }
+
+  async findAllByStationID(stationId: string) {
+    const station = await this.stationRepository.findOne({
+      where: {id: stationId}
+    })
+    if(!station) {
+      throw new NotFoundException("Station not found")
+    }
+    const sales = await this.saleRepository.find({
+      where: { station: station },
+      relations: [
+        'station'
+      ]
+    })
+    if(!sales) {
+      throw new NotFoundException("No sales record for this station found")
+    }
+    return sales;
   }
 
   /**
@@ -118,12 +147,27 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
    * @returns The updated sale entity
    */
   async update(id: string, updateSaleDto: UpdateSaleDto): Promise<Sale> {
-    const result = await this.saleRepository.update({ id }, updateSaleDto);
-    if (result.affected === 0) {
+    const existingSale = await this.saleRepository.findOneBy({ id });
+
+    if (!existingSale) {
       throw new NotFoundException(`Sale with ID ${id} not found`);
     }
-    // Fetch and return the updated entity
-    return this.findOne(id);
+
+    // 1. Merge the DTO data onto the existing entity
+    this.saleRepository.merge(existingSale, updateSaleDto);
+
+    // 2. Recalculate totalPrice if meter readings or price changed
+    const volumeLiters = existingSale.closingMeterReading - existingSale.openingMeterReading;
+    
+    if (volumeLiters <= 0) {
+        throw new BadRequestException('Closing meter reading must be greater than the opening meter reading after update.');
+    }
+
+    // Recalculate and assign the new total price
+    existingSale.totalPrice = parseFloat((volumeLiters * existingSale.pricePerLitre).toFixed(4));
+    
+    // 3. Save the entity to trigger listeners and update all fields
+    return this.saleRepository.save(existingSale);
   }
 
   /**
@@ -138,6 +182,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   }
 
   // --- New Reporting Methods ---
+  // The reporting methods are now sound, as 'totalPrice' is persisted.
 
   /**
    * 💰 Calculates the total monetary sales from all records.
@@ -146,10 +191,9 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   async getTotalSale(): Promise<number> {
     const result = await this.saleRepository
       .createQueryBuilder('sale')
-      .select('SUM(sale.totalPrice)', 'totalSale')
+      .select('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .getRawOne();
     
-    // Ensure the result is converted to a number, as SUM returns a string.
     return parseFloat(result.totalSale || 0);
   }
 
@@ -161,8 +205,8 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   async getTotalSalesByStationId(stationId: string): Promise<number> {
     const result = await this.saleRepository
       .createQueryBuilder('sale')
-      .select('SUM(sale.totalPrice)', 'totalSale')
-      .where('sale.stationId = :stationId', { stationId })
+      .select('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
+      .where('sale.station_id = :stationId', { stationId }) // Use foreign key column name
       .getRawOne();
 
     return parseFloat(result.totalSale || 0);
@@ -173,14 +217,10 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
    * @returns An array of objects: [{ week: number, totalSale: number }]
    */
   async getTotalSalesPerWeek(): Promise<any[]> {
-    // Note: Date formatting functions (STRFTIME) are SQLite-specific.
-    // For portability (Postgres/MySQL), you would use functions like TO_CHAR or DATE_FORMAT.
-    
-    // Using STRFTIME for SQLite compatibility (assuming SQLite backend as per prompt)
     const rawSalesData = await this.saleRepository
       .createQueryBuilder('sale')
-      .select("STRFTIME('%W', sale.createdAt)", 'week') // '%W' for week number (00-53)
-      .addSelect('SUM(sale.totalPrice)', 'totalSale')
+      .select("STRFTIME('%W', sale.created_at)", 'week') // Use column name 'created_at'
+      .addSelect('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .groupBy('week')
       .orderBy('week', 'ASC')
       .getRawMany();
@@ -196,11 +236,10 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
    * @returns An array of objects: [{ month: string, totalSale: number }]
    */
   async getTotalSalesPerMonth(): Promise<any[]> {
-    // Using STRFTIME for SQLite compatibility
     const rawSalesData = await this.saleRepository
       .createQueryBuilder('sale')
-      .select("STRFTIME('%Y-%m', sale.createdAt)", 'month') // '%Y-%m' for Year-Month (e.g., '2025-10')
-      .addSelect('SUM(sale.totalPrice)', 'totalSale')
+      .select("STRFTIME('%Y-%m', sale.created_at)", 'month') // Use column name 'created_at'
+      .addSelect('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .groupBy('month')
       .orderBy('month', 'ASC')
       .getRawMany();

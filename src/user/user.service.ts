@@ -165,7 +165,9 @@ export class UserService {
    */
   async findByEmail(email: string): Promise<any> {
     try{
-      const user = await this.userRepository.findOne({where: {email}})
+      const user = await this.userRepository.findOne({
+        where: {email}
+      })
       if(user) {
         return {
           success: true, 
@@ -186,6 +188,35 @@ export class UserService {
       }
     }
     
+  }
+
+  async findManagers(): Promise<any> {
+    try{
+      const managers =await this.userRepository.find({
+        where: {
+          role: Role.manager
+        },
+        relations: [
+          'info',
+          'contact'
+        ],
+        select: [
+          'id',
+          'email', 
+          'contact', 
+          'info', 
+          'role',
+          'status'
+        ]
+      })
+      return managers;
+
+    } catch (error) {
+      return{
+        success: false,
+        message: error.message
+      }
+    }
   }
 
   /**

@@ -2,7 +2,7 @@ import { Dispenser } from "src/dispenser/entities/dispenser.entity";
 import { Pump } from "src/station/entities/pump.entity";
 import { Station } from "src/station/entities/station.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, OneToOne } from "typeorm";
 
 enum Product {
     PETROL = 'PETROL',
@@ -20,9 +20,9 @@ enum Product {
      * The type of product sold (e.g., PETROL, DIESEL).
      */
     @Column({
-      default: 'petrol'
+      default: "product" // Use enum value as default
     })
-    product: string;
+    product: string; // Use the enum type
   
     /**
      * Price per unit volume (e.g., per liter) at the time of transaction.
@@ -61,29 +61,32 @@ enum Product {
     closingMeterReading: number;
   
     /**
+     * The calculated total price of the transaction (Volume * PricePerLitre).
+     * CRITICAL: Added for reporting queries.
+     */
+    @Column({
+      type: 'decimal',
+      precision: 15,
+      scale: 4,
+      nullable: false,
+      name: 'total_price',
+    })
+    totalPrice: number; // New column to store calculated price
+  
+    /**
      * Timestamp when the sale record was created (defaults to now).
-     * Renamed from transactionDate and using CreateDateColumn for clarity.
      */
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
   
     // --- Relationships ---
   
-    /**
-     * Links the sale to the specific dispenser/pump used.
-     * Using 'dispenser_id' as the foreign key column name.
-     */
-    @ManyToOne(() => Dispenser, (dispenser) => dispenser.sales)
-    @JoinColumn({ name: 'dispenser_id' }) // No need for referencedColumnName if it's 'id'
-    dispenser: Dispenser;
-  
     @ManyToOne(() => User, (user) => user.sales)
-    @JoinColumn({ name: 'recorded_by_user_id' }) // New foreign key column name
+    @JoinColumn({ name: 'recorded_by_user_id' })
     recordedBy: User;
   
     /**
-     * 🗺️ Links the sale to the specific Station where the transaction occurred.
-     * (Directly linking for easy querying, though station is also accessible via Pump).
+     * 🗺️ Links the sale to the specific Station where the transaction occurred (derived from Pump).
      */
     @ManyToOne(() => Station, (station) => station.sales)
     @JoinColumn({ name: 'station_id' })
@@ -93,6 +96,10 @@ enum Product {
      * ⛽ Links the sale to the specific Pump used.
      */
     @ManyToOne(() => Pump, (pump) => pump.sales)
-    @JoinColumn({ name: 'pump_id' }) // Renamed from 'dispenser_id' to 'pump_id'
+    @JoinColumn({ name: 'pump_id' })
     pump: Pump;
+
+    @OneToOne((type) => Dispenser, dispenser => dispenser.sales)
+    dispenser: Dispenser;
   }
+  

@@ -6,7 +6,6 @@ import { RolesGuard } from './auth/roles.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
   //app.useGlobalGuards(new JwtAuthGuard(), new RolesGuard(null));
 
   const config = new DocumentBuilder()

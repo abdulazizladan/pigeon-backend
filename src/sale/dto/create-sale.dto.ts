@@ -18,74 +18,50 @@ enum Product {
     KEROSENE = 'KEROSENE',
   }
 
-export class CreateSaleDto {
-    /**
-     * The unique identifier of the dispenser (pump) used for the sale.
-     * Maps to the 'dispenser' relationship in the entity.
-     */
+  export class CreateSaleDto {
     @ApiProperty({
-        description: 'UUID of the dispenser used for the sale.',
-        example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    })
-    @IsNotEmpty()
-    dispenserId: string;
-
-    /**
-     * The unique identifier of the station the sale.
-     * Maps to the 'station' relationship in the entity.
-     */
-    @ApiProperty({
-        description: 'UUID of the station where the sale was made',
-        example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
-    })
-    @IsNotEmpty()
-    stationId: string;
-    /**
-     * The type of fuel product sold. (e.g., PETROL, DIESEL)
-     */
-    @ApiProperty({
-        description: 'The type of fuel product sold.',
-        enum: Product,
-        example: Product.PETROL,
+      description: 'Type of fuel product sold.',
+      enum: Product,
+      example: Product.PETROL,
     })
     @IsEnum(Product)
+    @IsNotEmpty()
     product: Product;
-    
-    /**
-     * Price per unit volume (e.g., per liter) at the time of transaction.
-     */
+  
     @ApiProperty({
-        description: 'Price per liter at the time of sale.',
-        example: 1.55,
-        type: Number, // Swagger type correction
+      description: 'Price per liter at the time of transaction.',
+      example: 650.5,
     })
-    @IsNumber({ maxDecimalPlaces: 4 }, { message: 'Price must be a number with up to 4 decimal places.' })
-    @Min(0.01)
+    @IsNumber()
+    @Min(0)
+    @IsNotEmpty()
     pricePerLitre: number;
-
-    /**
-     * The reading on the dispenser before the transaction started.
-     */
+  
     @ApiProperty({
-        description: 'Meter reading before the fuel dispensing started.',
-        example: 10000.000,
-        type: Number,
+      description: 'Meter reading before the transaction started.',
+      example: 1000.0,
     })
-    @IsNumber({ maxDecimalPlaces: 3 })
+    @IsNumber()
     @Min(0)
+    @IsNotEmpty()
     openingMeterReading: number;
-
-    /**
-     * The reading on the dispenser after the transaction concluded.
-     * Must be greater than or equal to openingMeterReading.
-     */
+  
     @ApiProperty({
-        description: 'Meter reading after the fuel dispensing concluded.',
-        example: 10050.500,
-        type: Number,
+      description: 'Meter reading after the transaction concluded (must be > opening reading).',
+      example: 1200.0,
     })
-    @IsNumber({ maxDecimalPlaces: 3 })
+    @IsNumber()
     @Min(0)
+    @IsNotEmpty()
     closingMeterReading: number;
-
-}
+  
+    @ApiProperty({
+      description: 'ID of the specific pump used for the transaction.',
+      format: 'uuid',
+      example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    })
+    @IsUUID()
+    @IsNotEmpty()
+    pumpId: string; // Changed from dispenserId for consistency
+  }
+  

@@ -19,7 +19,7 @@ export class UserController {
    * Accessible by admin only.
    * @access admin
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  //@UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(Role.admin)
   @ApiOkResponse({ description: 'User created successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
@@ -38,7 +38,7 @@ export class UserController {
             firstName: 'Jane',
             lastName: 'Doe',
             image: 'https://example.com/avatar.jpg'
-          },
+          }, 
           contact: {
             phone: '+15551234567'
           }
@@ -83,6 +83,20 @@ export class UserController {
   }
 
   /**
+   * 
+   * @returns 
+   * @access all
+   */
+  @ApiOkResponse({ description: 'Managers fetched successfully' })
+  @ApiNoContentResponse({ description: 'No managers found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiOperation({ summary: 'Find all managers'})
+  @Get('managers')
+  findManagers() {
+    return this.userService.findManagers()
+  }
+
+  /**
    * Get a user by email.
    * Accessible by admin only.
    * @access admin
@@ -100,6 +114,7 @@ export class UserController {
     return this.userService.findOne(email);
   }
 
+  
   /**
    * Update a user by email.
    * Accessible by admin only.

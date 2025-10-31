@@ -29,6 +29,7 @@ import {
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -45,8 +46,8 @@ enum Product {
 
 @ApiTags('Sales Management')
 @ApiBearerAuth()
-@Controller('sales') // Changed to plural for RESTful standard
-//@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Controller('sales') 
+// @UseGuards(AuthGuard('jwt'), RolesGuard) // Uncomment when guards are ready
 export class SaleController {
   constructor(private readonly saleService: SaleService) {}
 
@@ -55,7 +56,7 @@ export class SaleController {
   @Roles(Role.manager)
   @ApiOperation({ summary: 'Create a new sale', description: 'Records a new fuel sale transaction.' })
   @ApiCreatedResponse({ description: 'Sale created successfully.', type: Sale })
-  @ApiBadRequestResponse({ description: 'Invalid input data or dispenser not found.' })
+  @ApiBadRequestResponse({ description: 'Invalid input data or pump not found.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @ApiBody({
@@ -64,21 +65,20 @@ export class SaleController {
       default: {
         summary: 'Sample create sale payload',
         value: {
-          product: Product.PETROL, // Updated product field
-          pricePerLitre: 650.5,
+          product: Product.PETROL,
+          pricePerLitre: 680.75, // Adjusted example value for demonstration
           openingMeterReading: 1000.0,
           closingMeterReading: 1200.0,
-          dispenserId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-          stationId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef'
-        } as CreateSaleDto, // Added type assertion for better structure
+          pumpId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', // IMPORTANT: Changed to pumpId for consistency
+        } as CreateSaleDto, 
       },
     },
   })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateSaleDto, @Req() req: any) {
-    // Correctly pass userId separately to the service to conform to CreateSaleDto type
-    const userId = req.user?.id;
+  create(@Body() dto: CreateSaleDto, @Param() id: string) {
+    // WARNING: req.user is dynamically set by the AuthGuard.
+    const userId = id || 'TEST_USER_UUID'; // Use a test user ID if not authenticated for development
     return this.saleService.create(dto, userId);
   }
 
@@ -105,7 +105,7 @@ export class SaleController {
   }
 
   @Roles(Role.manager)
-  @ApiOperation({ summary: 'Update a sale', description: 'Update a specific sale record by its ID.' })
+  @ApiOperation({ summary: 'Update a sale', description: 'Update a specific sale record by its ID. Triggers total price recalculation.' })
   @ApiOkResponse({ description: 'Sale updated successfully.', type: Sale })
   @ApiNotFoundResponse({ description: 'Sale not found.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
@@ -114,7 +114,7 @@ export class SaleController {
     type: UpdateSaleDto,
     examples: {
       default: {
-        summary: 'Sample update sale payload',
+        summary: 'Sample update sale payload (Updates trigger total price recalculation)',
         value: {
           pricePerLitre: 700.0,
           closingMeterReading: 1250.0,
@@ -129,12 +129,12 @@ export class SaleController {
 
   @Roles(Role.manager)
   @ApiOperation({ summary: 'Delete a sale', description: 'Deletes a sale record by its ID.' })
-  @ApiOkResponse({ description: 'Sale deleted successfully.' })
+  @ApiResponse({ status: 204, description: 'Sale deleted successfully (No Content).' }) // Updated response description
   @ApiNotFoundResponse({ description: 'Sale not found.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT) // Use 204 No Content for successful deletion
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.saleService.remove(id);
   }
@@ -213,5 +213,11 @@ export class SaleController {
   @Get('report/monthly')
   getTotalSalesPerMonth() {
     return this.saleService.getTotalSalesPerMonth();
+  }
+
+  @ApiOperation({summary: 'Get sales record by station'})
+  @Get('/station/:id')
+  getSalesByStation(@Param('id') id: string) {
+    return this.saleService.findAllByStationID(id);
   }
 }
