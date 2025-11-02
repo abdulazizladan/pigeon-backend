@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Status } from "../enum/status.enum";
 import { Sale } from "src/sale/entities/sale.entity";
 import { Station } from "src/station/entities/station.entity";
@@ -77,5 +77,8 @@ export class Dispenser {
     @JoinColumn({name: 'station_id', referencedColumnName: "id"})
     @IsOptional()
     station: Station;
+
+    @CreateDateColumn({default: Date.now()})
+    createdAt: Date;
 
 }

@@ -192,7 +192,7 @@ export class UserService {
 
   async findManagers(): Promise<any> {
     try{
-      const managers =await this.userRepository.find({
+      const managers = await this.userRepository.find({
         where: {
           role: Role.manager
         },
@@ -211,6 +211,37 @@ export class UserService {
       })
       return managers;
 
+    } catch (error) {
+      return{
+        success: false,
+        message: error.message
+      }
+    }
+  }
+
+  /**
+   * 
+   * @param id 
+   * @returns 
+   */
+  async findManagerByID(id: string): Promise<any> {
+    try{
+      const manager = await this.userRepository.findOne({
+        where: {id},
+        relations: [
+          'info',
+          'contact'
+        ],
+        select: [
+          'id',
+          'email', 
+          'contact', 
+          'info', 
+          'role',
+          'status'
+        ]
+      })
+      return manager
     } catch (error) {
       return{
         success: false,

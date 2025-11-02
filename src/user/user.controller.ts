@@ -96,6 +96,15 @@ export class UserController {
     return this.userService.findManagers()
   }
 
+  @ApiOkResponse({ description: 'Manager fetched successfully' })
+  @ApiNoContentResponse({ description: 'No manager found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiOperation({ summary: 'Find manager by ID'})
+  @Get('manager/:id')
+  findManagerByID(@Param('id') id: string) {
+    return this.userService.findManagerByID(id)
+  }
+
   /**
    * Get a user by email.
    * Accessible by admin only.
@@ -103,7 +112,7 @@ export class UserController {
    * @param email - The email of the user
    */
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.admin)
+  @Roles(Role.admin, Role.director, Role.manager)
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({ summary: 'Find one user' })
   @ApiNotFoundResponse({ description: 'User not found' })

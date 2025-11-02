@@ -30,7 +30,7 @@ export class MonthlyReport {
     @Column()
     notes: string;
 
-    @CreateDateColumn() // Automatically tracks creation timestamp
+    @CreateDateColumn({default: Date.now()}) // Automatically tracks creation timestamp
     createdAt: Date;
 
     @ManyToOne((type) => User, user => user.reports)

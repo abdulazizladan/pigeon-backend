@@ -76,7 +76,7 @@ enum Product {
     /**
      * Timestamp when the sale record was created (defaults to now).
      */
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', default: Date.now() })
     createdAt: Date;
   
     // --- Relationships ---

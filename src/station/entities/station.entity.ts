@@ -1,7 +1,7 @@
 import { Dispenser } from "src/dispenser/entities/dispenser.entity";
 import { Sale } from "src/sale/entities/sale.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { IsString, IsNumber, IsOptional, IsEnum } from "class-validator";
 import { Pump } from "./pump.entity";
 
@@ -73,4 +73,7 @@ export class Station {
 
     @OneToMany(() => Pump, (pump) => pump.station)
     pumps: Pump[];
+
+    @CreateDateColumn({ default: Date.now() })
+    createdAt: Date;
 }

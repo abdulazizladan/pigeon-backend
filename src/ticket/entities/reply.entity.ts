@@ -14,8 +14,10 @@ export class Reply {
   @Column({ nullable: false })
   message: string;
 
-  sender: User;
+  //@Column({nullable: true})
+  //sender: User;
 
-  @CreateDateColumn()
+  @CreateDateColumn({default: Date.now()})
   date: Date;
+
 }
