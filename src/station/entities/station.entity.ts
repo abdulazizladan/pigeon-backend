@@ -4,6 +4,7 @@ import { User } from "src/user/entities/user.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { IsString, IsNumber, IsOptional, IsEnum } from "class-validator";
 import { Pump } from "./pump.entity";
+import { PumpDailyRecord } from "./pum-daily-record.entity";
 
 @Entity({name: "Station"})
 export class Station {
@@ -73,6 +74,9 @@ export class Station {
 
     @OneToMany(() => Pump, (pump) => pump.station)
     pumps: Pump[];
+
+    @OneToMany(() => PumpDailyRecord, (record) => record.station)
+    dailyRecords: PumpDailyRecord[];
 
     @CreateDateColumn({ default: Date.now() })
     createdAt: Date;

@@ -230,7 +230,8 @@ export class UserService {
         where: {id},
         relations: [
           'info',
-          'contact'
+          'contact',
+          'station'
         ],
         select: [
           'id',

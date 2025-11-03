@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Station } from './entities/station.entity';
 import { Pump } from './entities/pump.entity';
 import { User } from 'src/user/entities/user.entity';
+import { PumpDailyRecord } from './entities/pum-daily-record.entity';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { User } from 'src/user/entities/user.entity';
       [
         Station,
         Pump,
-        User
+        User,
+        PumpDailyRecord
       ]
     )
   ],

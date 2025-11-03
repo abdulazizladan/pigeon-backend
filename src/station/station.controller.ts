@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/user/enums/role.enum';
+import { RecordSalesDto } from './dto/record-sales.dto';
 
 @ApiTags('Station')
 @ApiBearerAuth()
@@ -188,6 +189,87 @@ export class StationController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.stationService.remove(id);
+  }
+
+  // --- Record Daily Sales Endpoint ---
+
+  /**
+   * Record daily sales figures for a specific pump.
+   * This is a daily aggregate of volume and revenue for a single pump.
+   * Accessible by manager only (as they typically submit these daily figures).
+   * @access manager
+   */
+  //@Roles(Role.manager)
+  @ApiOperation({ description: "Record daily sales for a specific pump (upsert)", summary: "Record/Update Daily Pump Sales" })
+  @ApiCreatedResponse({ 
+    description: 'Daily sales recorded successfully (created or updated).',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { type: 'object' /* PumpDailyRecord entity */ }, 
+        message: { type: 'string', example: 'Daily sales recorded successfully' }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiForbiddenResponse({ description: 'Forbidden. Only manager role allowed.' })
+  @ApiBody({
+    type: RecordSalesDto,
+    examples: {
+      dailyRecord: {
+        summary: 'Example request for recording daily sales volume and revenue.',
+        value: {
+          pumpId: "a1b2c3d4-e5f6-7890-1234-567890abcdef", // Existing Pump ID
+          recordDate: "2025-11-03", // YYYY-MM-DD
+          volumeSold: 5678.50,      // Total volume in liters
+          totalRevenue: 937005.00,  // Total revenue for the day
+        } as RecordSalesDto,
+      },
+    },
+  })
+  @Post('record')
+  recordDailySales(@Body() recordSalesDto: RecordSalesDto) {
+    // The service handles the upsert logic (create if new, update if existing)
+    return this.stationService.recordDailySales(recordSalesDto);
+  }
+
+  // --- Aggregated Daily Sales Report Endpoint ---
+
+  /**
+   * Get daily sales aggregated and grouped by Station and Day.
+   * Accessible by director only (for high-level reporting).
+   * @access director
+   */
+  //@Roles(Role.director)
+  @ApiOperation({ description: "Get daily sales grouped by Station and Day", summary: "Daily Sales Report" })
+  @ApiOkResponse({ 
+    description: 'Aggregated daily sales report retrieved successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { 
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              stationName: { type: 'string', example: 'Eagle Fuel Depot' },
+              date: { type: 'string', format: 'date', example: '2025-11-03' },
+              totalVolumeSold: { type: 'number', example: 12000.50 },
+              totalDailyRevenue: { type: 'number', example: 1980000.00 }
+            }
+          }
+        },
+        message: { type: 'string', example: 'Aggregated daily sales by station retrieved successfully' }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiForbiddenResponse({ description: 'Forbidden. Only director role allowed.' })
+  @Get('report/daily')
+  getDailySalesReport() {
+    return this.stationService.getAggregatedDailySales();
   }
 
 }

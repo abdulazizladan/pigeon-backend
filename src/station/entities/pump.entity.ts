@@ -3,6 +3,7 @@
 import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, CreateDateColumn } from 'typeorm';
 import { Station } from '../../station/entities/station.entity'; // Adjust path as necessary
 import { Sale } from '../../sale/entities/sale.entity'; // Assuming your Sale entity is here
+import { PumpDailyRecord } from './pum-daily-record.entity';
 
 enum Product {
     PETROL = 'PETROL',
@@ -44,6 +45,9 @@ export class Pump {
    */
   @OneToMany(() => Sale, (sale) => sale.dispenser) // Note: Renamed 'dispenser' in Sale to match 'Pump' usage
   sales: Sale[];
+
+  @OneToMany(() => PumpDailyRecord, (record) => record.pump)
+  dailyRecords: PumpDailyRecord[];
 
   @CreateDateColumn({ default: Date.now()})
   createdAt: Date;

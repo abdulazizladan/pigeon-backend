@@ -6,6 +6,8 @@ import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Pump } from './entities/pump.entity';
+import { PumpDailyRecord } from './entities/pum-daily-record.entity';
+import { RecordSalesDto } from './dto/record-sales.dto';
 
 @Injectable()
 export class StationService {
@@ -17,6 +19,8 @@ export class StationService {
     private readonly pumpRepository: Repository<Pump>,
     @InjectRepository(User) // Inject User Repository
     private readonly userRepository: Repository<User>,
+    @InjectRepository(PumpDailyRecord)
+    private readonly dailyRecordRepository: Repository<PumpDailyRecord>,
   ) {}
 
   /**
@@ -282,4 +286,80 @@ export class StationService {
       }
     }
   }
+
+  async recordDailySales(recordSalesDto: RecordSalesDto) {
+    const { pumpId, recordDate, volumeSold, totalRevenue } = recordSalesDto;
+
+    // Use upsert logic: Find existing record for the pump and date
+    const existingRecord = await this.dailyRecordRepository.findOne({
+      where: {
+        pump: { id: pumpId }, // Assuming a Pump entity is needed for relation
+        recordDate: new Date(recordDate),
+      },
+      // Select the pump relation to get the stationId for the record
+      relations: ['pump', 'pump.station'], 
+    });
+
+    // 1. Get the Station ID from the Pump (needed for the denormalized column)
+    // You'd need to fetch the pump first if you don't have it.
+    // Assuming you have a PumpRepository injected or you fetch it here:
+    // const pump = await this.pumpRepository.findOne({ where: { id: pumpId }, relations: ['station'] });
+    // const stationId = pump.station.id;
+    
+    // For simplicity, we'll assume the Pump entity is correctly linked via TypeORM.
+    // If you add the stationId to the DTO, it simplifies things.
+
+    if (existingRecord) {
+      // 2. Update existing record (e.g., if a correction is made)
+      existingRecord.volumeSold = volumeSold;
+      existingRecord.totalRevenue = totalRevenue;
+      return this.dailyRecordRepository.save(existingRecord);
+    } else {
+      // 3. Create a new record
+      // NOTE: You must ensure you have the station entity/ID to link it.
+      // We will rely on TypeORM to figure out the station from the pump relationship.
+      const newRecord = this.dailyRecordRepository.create({
+        recordDate: new Date(recordDate),
+        volumeSold,
+        totalRevenue,
+        pump: { id: pumpId } as any, // Only need the ID for relationship insertion
+        // station: { id: stationId } as any, // If denormalized column is used
+      });
+      return this.dailyRecordRepository.save(newRecord);
+    }
+  }
+
+  /**
+   * 🏆 Retrieves daily sales grouped by Station and Day.
+   */
+  async getAggregatedDailySales() {
+    // We use the Query Builder for complex grouping and aggregation.
+    const results = await this.dailyRecordRepository.createQueryBuilder('record')
+      // Join to Station and Pump entities to access station name
+      .innerJoin('record.station', 'station')
+      .innerJoin('record.pump', 'pump')
+      
+      // Select the grouping columns and aggregation columns
+      .select('station.name', 'stationName')
+      .addSelect('record.recordDate', 'date')
+      .addSelect('SUM(record.volumeSold)', 'totalVolumeSold')
+      .addSelect('SUM(record.totalRevenue)', 'totalDailyRevenue')
+      
+      // Group the results by the Station Name and the Day
+      .groupBy('station.name')
+      .addGroupBy('record.recordDate')
+      
+      // Order the results for better readability
+      .orderBy('record.recordDate', 'DESC')
+      .addOrderBy('station.name', 'ASC')
+
+      .getRawMany(); // Use getRawMany to retrieve the custom selected columns
+
+    return {
+      success: true,
+      data: results,
+      message: 'Aggregated daily sales by station retrieved successfully',
+    };
+  }
+  
 }
