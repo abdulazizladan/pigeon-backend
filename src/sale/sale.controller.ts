@@ -13,6 +13,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { SaleService } from './sale.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
@@ -35,26 +36,20 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
-import { Sale } from './entities/sale.entity'; // Import the entity for clearer Swagger response types
-
-enum Product {
-  PETROL = 'PETROL',
-  DIESEL = 'DIESEL',
-  GAS = 'GAS', // Assumes LPG or similar
-  KEROSENE = 'KEROSENE',
-}
+import { Sale } from './entities/sale.entity';
+import { Product } from './enum/product.enum';
 
 @ApiTags('Sales Management')
 @ApiBearerAuth()
 @Controller('sales') 
-// @UseGuards(AuthGuard('jwt'), RolesGuard) // Uncomment when guards are ready
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SaleController {
   constructor(private readonly saleService: SaleService) {}
 
   // --- CRUD Endpoints ---
 
   @Roles(Role.manager)
-  @ApiOperation({ summary: 'Create a new sale', description: 'Records a new fuel sale transaction.' })
+  @ApiOperation({ summary: 'Create a new sale', description: 'Records a new fuel sale transaction. The authenticated user will be recorded as the user who created the sale.' })
   @ApiCreatedResponse({ description: 'Sale created successfully.', type: Sale })
   @ApiBadRequestResponse({ description: 'Invalid input data or pump not found.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
@@ -66,19 +61,22 @@ export class SaleController {
         summary: 'Sample create sale payload',
         value: {
           product: Product.PETROL,
-          pricePerLitre: 680.75, // Adjusted example value for demonstration
+          pricePerLitre: 680.75,
           openingMeterReading: 1000.0,
           closingMeterReading: 1200.0,
-          pumpId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', // IMPORTANT: Changed to pumpId for consistency
+          pumpId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
         } as CreateSaleDto, 
       },
     },
   })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateSaleDto, @Param() id: string) {
-    // WARNING: req.user is dynamically set by the AuthGuard.
-    const userId = id || 'TEST_USER_UUID'; // Use a test user ID if not authenticated for development
+  create(@Body() dto: CreateSaleDto, @Req() req: any) {
+    // req.user is set by the AuthGuard (JwtStrategy) and contains { id, email, role }
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID not found in request. Ensure authentication is enabled.');
+    }
     return this.saleService.create(dto, userId);
   }
 

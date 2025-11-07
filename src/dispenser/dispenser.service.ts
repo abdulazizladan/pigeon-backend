@@ -25,18 +25,14 @@ export class DispenserService {
     try { 
       // Create and save a new dispenser entity
       const dispenser =  await this.dispenserRepository.create(createDispenserDto)
-      await this.dispenserRepository.save(dispenser)
+      const newDispenser = await this.dispenserRepository.save(dispenser)
       return {
         success: true,
-        data: createDispenserDto,
+        data: newDispenser,
         message: "Dispenser added successfully"
       }
     } catch (error) {
-      // Return error message if creation fails
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new NotFoundException(`error: ${error.message}`)
     }
   }
 
@@ -102,11 +98,10 @@ export class DispenserService {
         where: 
         { 
           id: id 
-        }, 
-        relations: 
-        [
-          'sales'
-        ]
+        },
+        relations: {
+          sales: true
+        }
       }
     )
     try {

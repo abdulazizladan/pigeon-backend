@@ -112,7 +112,7 @@ export class UserController {
    * @param email - The email of the user
    */
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.admin, Role.director, Role.manager)
+  //@Roles(Role.admin, Role.director, Role.manager)
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiOperation({ summary: 'Find one user' })
   @ApiNotFoundResponse({ description: 'User not found' })

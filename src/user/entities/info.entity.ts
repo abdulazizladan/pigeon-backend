@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { PrimaryGeneratedColumn, Column, Entity, JoinColumn, OneToOne, UpdateDateColumn } from "typeorm";
 import { User } from "./user.entity";
 import { IsString, IsOptional, IsNumber } from "class-validator";
 
@@ -39,4 +39,7 @@ export class Info {
     @JoinColumn({name: 'user_email', referencedColumnName: "email"})
     @OneToOne((type) => User, user => user.info, { cascade: true, onDelete: 'CASCADE'})
     user: User;
+
+    @UpdateDateColumn()
+    lastUpdated: Date;
 }

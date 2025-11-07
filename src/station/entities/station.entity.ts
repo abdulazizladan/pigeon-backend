@@ -1,10 +1,11 @@
 import { Dispenser } from "src/dispenser/entities/dispenser.entity";
 import { Sale } from "src/sale/entities/sale.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { IsString, IsNumber, IsOptional, IsEnum } from "class-validator";
 import { Pump } from "./pump.entity";
 import { PumpDailyRecord } from "./pum-daily-record.entity";
+import { Stock } from "./stock.entity";
 
 @Entity({name: "Station"})
 export class Station {
@@ -80,4 +81,16 @@ export class Station {
 
     @CreateDateColumn({ default: Date.now() })
     createdAt: Date;
+
+    @Column({default: 0})
+    petrolVolume: number;
+
+    @Column({default: 0})
+    dieselVolumn: number;
+
+    @OneToMany((type) => Stock, stock => stock.station)
+    stock: Stock[];
+
+    @UpdateDateColumn()
+    lastUpdated: Date;
 }

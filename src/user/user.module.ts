@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Info } from './entities/info.entity';
 import { Contact } from './entities/contact.entity';
+import { Station } from 'src/station/entities/station.entity';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { Contact } from './entities/contact.entity';
       [
         User, 
         Info, 
-        Contact
+        Contact,
+        Station
       ]
     )
   ],

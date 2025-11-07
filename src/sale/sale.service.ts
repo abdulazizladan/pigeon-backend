@@ -51,7 +51,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
   const user = await this.userRepository.findOne({
     where: { id: userId },
   });
-
+  console.log(user)
   if (!user) {
     throw new NotFoundException(`User with ID ${userId} not found`);
   }
@@ -129,7 +129,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
       throw new NotFoundException("Station not found")
     }
     const sales = await this.saleRepository.find({
-      where: { station: station },
+      where: { id: stationId },
       relations: [
         'station'
       ]
@@ -137,7 +137,11 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     if(!sales) {
       throw new NotFoundException("No sales record for this station found")
     }
-    return sales;
+    return {
+      success: true,
+      data: sales,
+      message: `Sales recorsds for station ${stationId} fetched successfully`
+    };
   }
 
   /**

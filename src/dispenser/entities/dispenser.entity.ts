@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Status } from "../enum/status.enum";
 import { Sale } from "src/sale/entities/sale.entity";
 import { Station } from "src/station/entities/station.entity";
@@ -80,5 +80,8 @@ export class Dispenser {
 
     @CreateDateColumn({default: Date.now()})
     createdAt: Date;
+
+    @UpdateDateColumn()
+    lastUpdated: Date;
 
 }

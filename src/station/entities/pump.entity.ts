@@ -1,6 +1,6 @@
 // src/pump/entities/pump.entity.ts (or dispenser.entity.ts)
 
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, CreateDateColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Station } from '../../station/entities/station.entity'; // Adjust path as necessary
 import { Sale } from '../../sale/entities/sale.entity'; // Assuming your Sale entity is here
 import { PumpDailyRecord } from './pum-daily-record.entity';
@@ -52,4 +52,6 @@ export class Pump {
   @CreateDateColumn({ default: Date.now()})
   createdAt: Date;
 
+  @UpdateDateColumn()
+  lastUpdated: Date;
 }

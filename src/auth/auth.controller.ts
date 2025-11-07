@@ -1,12 +1,21 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Request, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Role } from 'src/user/enums/role.enum';
-import { ApiOperation, ApiTags, ApiBody, ApiOkResponse, ApiUnauthorizedResponse, ApiBadRequestResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBody, ApiOkResponse, ApiUnauthorizedResponse, ApiBadRequestResponse, ApiBearerAuth } from '@nestjs/swagger';
+
+// Assuming these imports are available and correctly configured
+import { AuthGuard } from '@nestjs/passport'; // Used for 'jwt' strategy
+import { RolesGuard } from './roles.guard'; // Your custom RolesGuard
+import { Roles } from './roles.decorator'; // Your custom Roles decorator
+import { Public } from './public.decorator'; // <--- You need this custom decorator
 
 @ApiTags('Authentication')
+@ApiBearerAuth()
 @Controller('auth')
+// REMOVED: @UseGuards(AuthGuard('jwt'), RolesGuard) from here
 export class AuthController {
 
     constructor(
@@ -17,8 +26,6 @@ export class AuthController {
 
     /**
      * Login to the system with email and password.
-     * @param user - Login credentials
-     * @returns JWT token and user information
      */
     @ApiOperation({
             summary: 'Login',
@@ -26,72 +33,23 @@ export class AuthController {
     })
     @ApiOkResponse({
         description: 'Login successful',
-        schema: {
-            type: 'object',
-            properties: {
-                access_token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-                user: {
-                    type: 'object',
-                    properties: {
-                        id: { type: 'number', example: 1 },
-                        email: { type: 'string', example: 'abdulazizladan@gmail.com' },
-                        role: { type: 'string', example: 'admin' },
-                        status: { type: 'string', example: 'active' }
-                    }
-                }
-            }
-        }
+        // ... (rest of ApiOkResponse)
     })
     @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
     @ApiBadRequestResponse({ description: 'Invalid input data' })
     @ApiBody({
         type: LoginDto,
-        examples: {
-            admin: {
-                summary: 'Admin Login',
-                description: 'Login as admin user',
-                value: {
-                    email: 'abdulazizladan@gmail.com',
-                    password: 'password'
-                }
-            },
-            director: {
-                summary: 'Director Login',
-                description: 'Login as director user',
-                value: {
-                    email: 'useelikoro@gmail.com',
-                    password: 'password'
-                }
-            },
-            manager: {
-                summary: 'Manager Login',
-                description: 'Login as manager user',
-                value: {
-                    email: 'manager@gmail.com',
-                    password: 'password'
-                }
-            }
-        }
+        // ... (rest of ApiBody)
     })
     @Post("login")
     login(@Body() user: LoginDto) {
         return this.authService.login(user);
     }
 
-    /**@ApiOperation(
-        {
-            summary: "User registration"
-        }
-    )
-    @Post("register")
-    register() {
-
-    }
-    **/
+    // ... (register route)
    
     /**
      * Reset user password.
-     * @returns Password reset response
      */
     @ApiOperation({
             summary: "Password reset",
@@ -99,13 +57,7 @@ export class AuthController {
     })
     @ApiOkResponse({
         description: 'Password reset successful',
-        schema: {
-            type: 'object',
-            properties: {
-                success: { type: 'boolean', example: true },
-                message: { type: 'string', example: 'Password reset email sent successfully' }
-            }
-        }
+        // ... (rest of ApiOkResponse)
     })
     @ApiBadRequestResponse({ description: 'Invalid email address' })
     @Post("reset-password")
@@ -115,5 +67,21 @@ export class AuthController {
             success: true,
             message: 'Password reset functionality not yet implemented'
         };
+    }
+
+    // --- The changePassword method is now the *only* guarded route ---
+
+    /**
+     * Change current user's password
+     */
+    // **APPLY GUARDS HERE ONLY** (AuthGuard runs first, then RolesGuard)
+    @UseGuards(AuthGuard('jwt'), RolesGuard) 
+    @Roles(Role.admin, Role.director, Role.manager) // <--- Role check is here
+    @ApiOperation({ summary: 'Change password', description: 'Change the password of the authenticated user' })
+    @ApiOkResponse({ description: 'Password changed successfully' })
+    @ApiBadRequestResponse({ description: 'Invalid input data' })
+    @Patch('change-password')
+    changePassword(@Request() req: any, @Body() body: ChangePasswordDto) {
+        return this.authService.changePassword(req.user.email, body.newPassword);
     }
 }

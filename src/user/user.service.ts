@@ -132,6 +132,7 @@ export class UserService {
               'contact',
               'reports',
               'tickets',
+              'station'
             ]
           }
         );
@@ -239,7 +240,8 @@ export class UserService {
           'contact', 
           'info', 
           'role',
-          'status'
+          'status',
+          'station'
         ]
       })
       return manager

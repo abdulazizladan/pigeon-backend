@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { User } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -77,4 +78,25 @@ export class AuthService {
           }
         }**/
       }
+
+      /**
+       * Changes the password of the currently authenticated user
+       * @param email - Email of the user whose password is being changed
+       * @param newPassword - The new password in plain text
+       */
+      async changePassword(email: string, newPassword: string) {
+    
+        const hashedPassword = await User.hashPassword(newPassword);
+        const updateDto = { password: hashedPassword };
+        const updated = await this.usersService.update(email, updateDto);
+        if (!updated) {
+            throw new NotFoundException(`User with email "${email}" not found.`); 
+        }
+        const newToken = await this.login({ email: updated.email, password: newPassword });
+        return {
+          success: true,
+          message: 'Password updated successfully',
+          data: newToken
+        }
+    }
 }

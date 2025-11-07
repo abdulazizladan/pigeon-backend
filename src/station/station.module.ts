@@ -6,6 +6,7 @@ import { Station } from './entities/station.entity';
 import { Pump } from './entities/pump.entity';
 import { User } from 'src/user/entities/user.entity';
 import { PumpDailyRecord } from './entities/pum-daily-record.entity';
+import { Stock } from './entities/stock.entity';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { PumpDailyRecord } from './entities/pum-daily-record.entity';
         Station,
         Pump,
         User,
-        PumpDailyRecord
+        PumpDailyRecord,
+        Stock
       ]
     )
   ],

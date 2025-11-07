@@ -140,9 +140,13 @@ export class StationService {
     const station = await this.stationRepository.findOne(
       {
         where: { id },
-        relations: [
-          'manager', 'pumps' // Also include pumps in findOne
-        ]
+        relations: {
+          manager: {
+            info: true
+          },
+          pumps: true,
+          dispensers: true
+        }
       }
     );
     try {

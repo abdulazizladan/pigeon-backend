@@ -3,13 +3,7 @@ import { Pump } from "src/station/entities/pump.entity";
 import { Station } from "src/station/entities/station.entity";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, OneToOne } from "typeorm";
-
-enum Product {
-    PETROL = 'PETROL',
-    DIESEL = 'DIESEL',
-    GAS = 'GAS', // Assumes LPG or similar
-    KEROSENE = 'KEROSENE',
-  }
+import { Product } from "../enum/product.enum";
 
   @Entity({ name: 'Sale' }) // Use plural, lowercase name convention
   export class Sale {
@@ -89,7 +83,7 @@ enum Product {
      * 🗺️ Links the sale to the specific Station where the transaction occurred (derived from Pump).
      */
     @ManyToOne(() => Station, (station) => station.sales)
-    @JoinColumn({ name: 'station_id' })
+    @JoinColumn({ name: 'stationId' })
     station: Station;
   
     /**

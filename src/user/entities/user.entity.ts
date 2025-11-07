@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Info } from "./info.entity";
 import { Role } from "../enums/role.enum";
 import * as bcrypt from "bcrypt";
@@ -120,6 +120,9 @@ export class User {
 
     @OneToMany((type) => Sale, sale => sale.recordedBy)
     sales: Sale[];
+
+    @UpdateDateColumn()
+    lastUpdated: Date;
 }
 
 
