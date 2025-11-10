@@ -94,6 +94,7 @@ import { Product } from "../enum/product.enum";
     pump: Pump;
 
     @OneToOne((type) => Dispenser, dispenser => dispenser.sales)
+    @JoinColumn({name: 'saleId'})
     dispenser: Dispenser;
   }
   

@@ -40,9 +40,9 @@ import { Sale } from './entities/sale.entity';
 import { Product } from './enum/product.enum';
 
 @ApiTags('Sales Management')
-@ApiBearerAuth()
+//@ApiBearerAuth()
 @Controller('sales') 
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+//@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SaleController {
   constructor(private readonly saleService: SaleService) {}
 

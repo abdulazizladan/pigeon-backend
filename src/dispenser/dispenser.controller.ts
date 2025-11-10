@@ -11,7 +11,7 @@ import { Role } from 'src/auth/enums/role.enum';
 
 // Swagger tag for grouping endpoints and requiring Bearer Auth
 @ApiTags('Dispenser')
-@ApiBearerAuth()
+//@ApiBearerAuth()
 // Main controller for dispenser endpoints, protected by JWT and role guards
 @Controller('dispenser')
 //@UseGuards(AuthGuard('jwt'), RolesGuard)

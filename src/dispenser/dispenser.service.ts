@@ -62,7 +62,11 @@ export class DispenserService {
    */
   async findAll() {
     // Retrieve all dispensers
-    const dispensers = await this.dispenserRepository.find()
+    const dispensers = await this.dispenserRepository.find({
+      relations: {
+        station: true
+      }
+    })
     try {
       if(dispensers.length != 0){
         return {

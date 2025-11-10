@@ -229,11 +229,13 @@ export class UserService {
     try{
       const manager = await this.userRepository.findOne({
         where: {id},
-        relations: [
-          'info',
-          'contact',
-          'station'
-        ],
+        relations: {
+          info: true, 
+          contact: true, 
+          station: {
+            stock: true
+          },
+        },
         select: [
           'id',
           'email', 
@@ -241,7 +243,8 @@ export class UserService {
           'info', 
           'role',
           'status',
-          'station'
+          'station',
+          'lastUpdated'
         ]
       })
       return manager

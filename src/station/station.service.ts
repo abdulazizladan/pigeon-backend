@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Station } from './entities/station.entity';
@@ -8,6 +8,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Pump } from './entities/pump.entity';
 import { PumpDailyRecord } from './entities/pum-daily-record.entity';
 import { RecordSalesDto } from './dto/record-sales.dto';
+import { Role } from 'src/user/enums/role.enum';
 
 @Injectable()
 export class StationService {
@@ -289,6 +290,83 @@ export class StationService {
         message: error.message
       }
     }
+  }
+
+  /**
+   * 🏆 Assigns a manager (User) to a Station.
+   * @param stationId - The ID of the station
+   * @param managerId - The ID of the user to assign as manager
+   * @returns An object with the updated station data
+   */
+  async assignManager(stationId: string, managerId: string) {
+    // 1. Find the existing station entity
+    const station = await this.stationRepository.findOne({ where: { id: stationId } });
+
+    if (!station) {
+      throw new NotFoundException(`Station with ID ${stationId} not found`);
+    }
+
+    // 2. Find the user to be assigned as manager
+    const manager = await this.userRepository.findOne({ where: { id: managerId } });
+
+    if (!manager) {
+      return { success: false, message: `User with ID ${managerId} not found.` };
+    }
+    
+    // Optional: Add validation that the user's role is 'manager'
+    if (manager.role !== Role.manager) {
+        return { success: false, message: `User with ID ${managerId} is not a Manager. Current role: ${manager.role}` };
+    }
+
+    // 3. Assign the manager to the station
+    station.manager = manager;
+
+    // 4. Save the updated station entity
+    const updatedStation = await this.stationRepository.save(station);
+
+    return {
+      success: true,
+      data: updatedStation,
+      message: 'Manager assigned successfully',
+    };
+  }
+
+  /**
+   * 🏆 Unassigns the current manager from a Station.
+   * @param stationId - The ID of the station
+   * @returns An object with the updated station data
+   */
+  async unassignManager(stationId: string) {
+    // 1. Find the existing station entity
+    const station = await this.stationRepository.findOne({ where: { id: stationId } });
+
+    if (!station) {
+      throw new NotFoundException(`Station with ID ${stationId} not found`);
+    }
+
+    // 2. Check if a manager is currently assigned (optional check)
+    if (!station.manager) {
+        return {
+            success: true,
+            data: station,
+            message: 'No manager was assigned to this station',
+        };
+    }
+    
+    // 3. Unassign the manager (set to null)
+    station.manager = null;
+
+    // 4. Save the updated station entity
+    const updatedStation = await this.stationRepository.save(station);
+
+    // Note: The User entity's `station` field is also updated by TypeORM's
+    // cascade/inverse side logic (OneToOne relation).
+
+    return {
+      success: true,
+      data: updatedStation,
+      message: 'Manager unassigned successfully',
+    };
   }
 
   async recordDailySales(recordSalesDto: RecordSalesDto) {

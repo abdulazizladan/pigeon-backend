@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { StationService } from './station.service';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
@@ -8,6 +8,10 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/user/enums/role.enum';
 import { RecordSalesDto } from './dto/record-sales.dto';
+
+interface ManagerIdDto { 
+  managerId: string; 
+}
 
 @ApiTags('Station')
 @ApiBearerAuth()
@@ -189,6 +193,52 @@ export class StationController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.stationService.remove(id);
+  }
+
+  /**
+   * Assigns a manager to a station.
+   * Accessible by director only.
+   * @access director
+   * @param id - The ID of the station
+   * @param managerIdDto - DTO containing the User ID of the manager
+   */
+  @Roles(Role.director)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ description: "Assign a manager (User) to a station", summary: "Assign Station Manager" })
+  @ApiOkResponse({ description: 'Manager assigned successfully.' })
+  @ApiNotFoundResponse({ description: 'Station or Manager not found.' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiForbiddenResponse({ description: 'Forbidden. Only director role allowed.' })
+  @ApiBadRequestResponse({ description: 'Invalid input data or User is not a Manager role.' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        managerId: { type: 'string', format: 'uuid', example: 'f0e1d2c3-b4a5-6789-0123-456789abcdef' }
+      }
+    }
+  })
+  @Post(':id/manager/assign')
+  assignManager(@Param('id') id: string, @Body() managerIdDto: ManagerIdDto) {
+    return this.stationService.assignManager(id, managerIdDto.managerId);
+  }
+
+  /**
+   * Unassigns the current manager from a station.
+   * Accessible by director only.
+   * @access director
+   * @param id - The ID of the station
+   */
+  @Roles(Role.director)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ description: "Unassign the current manager from a station", summary: "Unassign Station Manager" })
+  @ApiOkResponse({ description: 'Manager unassigned successfully.' })
+  @ApiNotFoundResponse({ description: 'Station not found.' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiForbiddenResponse({ description: 'Forbidden. Only director role allowed.' })
+  @Delete(':id/manager/unassign')
+  unassignManager(@Param('id') id: string) {
+    return this.stationService.unassignManager(id);
   }
 
   // --- Record Daily Sales Endpoint ---

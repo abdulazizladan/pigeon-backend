@@ -36,7 +36,7 @@ export class Pump {
    * This is the Many side of the relationship.
    */
   @ManyToOne(() => Station, (station) => station.pumps)
-  @JoinColumn({ name: 'station_id' }) // Foreign key column in the 'pumps' table
+  @JoinColumn({ name: 'stationId' }) // Foreign key column in the 'pumps' table
   station: Station;
 
   /**
