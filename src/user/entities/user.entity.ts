@@ -74,7 +74,7 @@ export class User {
     /**
      * One-to-one relation to Station entity (if user is a manager)
      */
-    @OneToOne((type) => Station, station => station.manager, {nullable: true})
+    @OneToOne((type) => Station, station => station.manager, {nullable: true, cascade: true})
     @IsOptional()
     station: Station;
 

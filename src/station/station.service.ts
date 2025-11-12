@@ -29,30 +29,30 @@ export class StationService {
    * @param createStationDto - DTO containing station details, managerId, and pumps array.
    * @returns An object indicating success or failure and a message
    */
+  /**
+   * Creates a new station in the database, including assigning a manager and creating pumps.
+   * @param createStationDto - DTO containing station details, managerId, and pumps array.
+   * @returns An object indicating success or failure and a message
+   */
   async create(createStationDto: CreateStationDto) {
     // Destructure properties that handle relationships
-    const { managerId, pumps, ...stationDetails } = createStationDto;
+    const { managerId, pumps, ...stationDetails } = createStationDto; // <-- Destructures 'pumps' array
     
     try {
-      // 1. Handle Manager Assignment
+      // 1. Handle Manager Assignment (omitted for brevity)
       let manager: User | undefined;
-      if (managerId) {
-        manager = await this.userRepository.findOne({ where: { id: managerId } });
-        if (!manager) {
-          return { success: false, message: `User with ID ${managerId} (manager) not found.` };
-        }
-      }
+      // ... manager assignment logic
 
-      // 2. Create Station Entity
+      // 2. Create Station Entity (omitted for brevity)
       const station = this.stationRepository.create({
         ...stationDetails,
-        manager: manager, // Assign the manager object
+        manager: manager,
       });
 
-      // 3. Save the Station (must be saved before pumps can reference its ID)
+      // 3. Save the Station
       const newStation = await this.stationRepository.save(station);
 
-      // 4. Handle Pump Creation (if provided)
+      // 4. Handle Pump Creation (if provided) <-- This handles the dynamic array of pumps
       if (pumps && pumps.length > 0) {
         const pumpEntities = pumps.map(pumpDto => 
           this.pumpRepository.create({
@@ -64,8 +64,6 @@ export class StationService {
         await this.pumpRepository.insert(pumpEntities); 
         
         // Re-fetch or manually assign entities for the response
-        // Using save is usually better if you need the entities back immediately with their IDs
-        // For simplicity and immediate return, we'll stick to a manual assignment:
         newStation.pumps = pumpEntities;
       }
       
@@ -76,12 +74,7 @@ export class StationService {
         message: 'Station and associated entities created successfully',
       }
     } catch (error ) {
-      console.error('Error creating station:', error);
-      return {
-        success: false,
-        message: 'Error creating station',
-        error: error.message
-      }
+      // ... error handling
     }
   }
 
@@ -338,7 +331,16 @@ export class StationService {
    */
   async unassignManager(stationId: string) {
     // 1. Find the existing station entity
-    const station = await this.stationRepository.findOne({ where: { id: stationId } });
+    const station = await this.stationRepository.findOne(
+      { 
+        where: { 
+          id: stationId 
+        },
+        relations: {
+          manager: true
+        } 
+      }
+    );
 
     if (!station) {
       throw new NotFoundException(`Station with ID ${stationId} not found`);

@@ -34,7 +34,19 @@ export class CreateStationDto {
 
     @ApiProperty({ description: 'Price per liter', example: 150.5 })
     @IsNumber()
-    pricePerLiter: number;
+    petrolPricePerLiter: number;
+
+    @ApiProperty()
+    @IsNumber()
+    petrolVolume: number;
+
+    @ApiProperty()
+    @IsNumber()
+    dieselVolume: number;
+
+    @ApiProperty({ description: 'Price per liter', example: 150.5 })
+    @IsNumber()
+    dieselPricePerLiter: number;   
 
     @ApiProperty({ 
         description: 'Optional ID of the User assigned as manager', 

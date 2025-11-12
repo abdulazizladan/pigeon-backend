@@ -48,8 +48,7 @@ export class Station {
     latitude: number;
 
     @JoinColumn({name: "user_id", referencedColumnName: "id"})
-    @OneToOne((type) => User, (user: User) => user.station)
-    // Manager of the station (User entity)
+    @OneToOne((type) => User, (user: User) => user.station, {nullable: true})
     @IsOptional()
     manager: User;
 
@@ -86,7 +85,13 @@ export class Station {
     petrolVolume: number;
 
     @Column({default: 0})
-    dieselVolumn: number;
+    petrolPricePerLitre: number;
+
+    @Column({default: 0})
+    dieselVolume: number;
+
+    @Column({default: 0})
+    dieselPricePerLitre: number;
 
     @OneToMany((type) => Stock, stock => stock.station)
     stock: Stock[];

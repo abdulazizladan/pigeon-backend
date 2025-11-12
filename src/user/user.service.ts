@@ -316,4 +316,29 @@ export class UserService {
       }
     }
   }
+
+  async getAvailableMAnagers() {
+    const managers = await this.userRepository.find(
+      {
+        where: {
+          role: Role.manager,
+          station: null
+        }
+      }
+    )
+    try {
+      if(managers) {
+        return {
+          success: true,
+          data: managers,
+          message: 'Managers fetched successfully'
+        }
+      }
+    } catch(error) {
+      return {
+        success: false,
+        message: error.message
+      }
+    }
+  }
 }

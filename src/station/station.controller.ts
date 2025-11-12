@@ -13,7 +13,7 @@ interface ManagerIdDto {
   managerId: string; 
 }
 
-@ApiTags('Station')
+@ApiTags('Stations')
 @ApiBearerAuth()
 @Controller('station')
 //@UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -42,9 +42,10 @@ export class StationController {
    * @access admin, director
    */
   @Roles(Role.admin, Role.director)
-  @ApiOperation({ description: "Add new station", summary: "Add new station" })
+  @ApiOperation({ description: "Add new station with a dynamic list of pumps.", summary: "Add new station and its pumps" }) // 👈 Updated summary
   @ApiCreatedResponse({ 
     description: 'Station created successfully.',
+    // ... Schema property definition remains valid, referencing the DTO
     schema: {
       type: 'object',
       properties: {
@@ -70,9 +71,13 @@ export class StationController {
           state: "Lagos",
           longitude: 3.4206,
           latitude: 6.4531,
-          pricePerLiter: 165.00,
+          petrolVolume: 0,
+          petrolPricePerLiter: 165.00,
+          dieselVolume: 0,
+          dieselPricePerLiter: 165.00,
           // Manager ID must be an existing User ID (UUID)
           managerId: "f0e1d2c3-b4a5-6789-0123-456789abcdef", 
+          // The dynamic list of pumps is defined here:
           pumps: [
             { pumpNumber: 1, dispensedProduct: "PETROL" },
             { pumpNumber: 2, dispensedProduct: "DIESEL" },
@@ -84,6 +89,7 @@ export class StationController {
   })
   @Post()
   create(@Body() createStationDto: CreateStationDto) {
+    // Calls the service function that handles the dynamic pump creation
     return this.stationService.create(createStationDto);
   }
 

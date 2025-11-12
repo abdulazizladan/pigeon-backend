@@ -19,8 +19,23 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    UserModule, 
+    //TypeOrmModule.forRoot({
+      // 1. Change the type to 'mysql' (or 'postgres' if applicable)
+    //  type: 'mysql',
+    
+      // 2. Specify the remote server details
+    //  host: 'sql8.freesqldatabase.com',
+    //  port: 3306, // Default MySQL port, adjust if needed
+    //  username: 'sql8807217',
+    //  password: '37iiRsQM5G',
+    //  database: 'sql8807217',
+    
+      // 3. Keep existing settings for entities and synchronization
+    //  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    //  synchronize: true, // Be cautious with 'synchronize: true' in production
+    //}),
     AuthModule,
+    UserModule, 
     StationModule, 
     SaleModule, 
     DispenserModule, 

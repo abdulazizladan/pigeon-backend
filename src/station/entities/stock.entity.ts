@@ -11,10 +11,16 @@ export class Stock {
     dateTaken: Date;
 
     @Column()
-    petrolReading: number;
+    petrolOpeningReading: number;
 
     @Column()
-    dieselReading: number;
+    petrolClosingReading: number;
+
+    @Column()
+    dieselOpeningReading: number;
+
+    @Column()
+    dieselClosingReading: number;
 
     @CreateDateColumn({default: Date.now()})
     dateUpdated: Date;
