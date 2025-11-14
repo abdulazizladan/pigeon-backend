@@ -78,7 +78,7 @@ export class Dispenser {
     @IsOptional()
     station: Station;
 
-    @CreateDateColumn({default: Date.now()})
+    @CreateDateColumn({ precision: 6})
     createdAt: Date;
 
     @UpdateDateColumn()

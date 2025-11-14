@@ -103,7 +103,22 @@ export class StationService {
    * @returns An object with all stations or a message if none are found
    */
   async findAll() {
-    const stations = await this.stationRepository.find();
+    const stations = await this.stationRepository.find(
+      {
+        relations: {
+          'manager': {
+            'info': true
+          },
+          'pumps': true,
+          'stock': true
+        },
+        order: {
+          stock: {
+            dateTaken: 'desc'
+          }
+        }
+      }
+    );
     try {
       if( stations.length === 0) {
       return {

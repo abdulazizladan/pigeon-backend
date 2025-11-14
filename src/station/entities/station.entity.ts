@@ -78,7 +78,7 @@ export class Station {
     @OneToMany(() => PumpDailyRecord, (record) => record.station)
     dailyRecords: PumpDailyRecord[];
 
-    @CreateDateColumn({ default: Date.now() })
+    @CreateDateColumn({ precision: 6 })
     createdAt: Date;
 
     @Column({default: 0})

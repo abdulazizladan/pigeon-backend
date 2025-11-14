@@ -22,7 +22,7 @@ export class Stock {
     @Column()
     dieselClosingReading: number;
 
-    @CreateDateColumn({default: Date.now()})
+    @CreateDateColumn({ precision: 6})
     dateUpdated: Date;
 
     @ManyToOne((type) => Station, station => station.stock)

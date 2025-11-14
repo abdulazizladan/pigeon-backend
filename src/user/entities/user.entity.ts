@@ -39,7 +39,7 @@ export class User {
     /**
      * Role of the user (admin, director, manager)
      */
-    @Column({type: 'text', enum: Role, default: Role.manager})
+    @Column({ default: Role.manager})
     @IsEnum(Role)
     role: Role;
 
@@ -53,7 +53,7 @@ export class User {
     /**
      * Date when the user was created
      */
-    @CreateDateColumn({default: Date.now()})
+    @CreateDateColumn({precision: 6})
     @IsDate()
     createdAt: Date;
 

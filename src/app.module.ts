@@ -13,11 +13,21 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    //TypeOrmModule.forRoot({
+    //  type: 'sqlite',
+    //  database: 'db',
+    //  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    //  synchronize: true,
+    //}),
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'db',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      type: 'mysql',
+          host: '102.209.117.55', // or your MySQL host
+          port: 3306, // or your MySQL port
+          username: 'ladanski_pigeon_admin',
+          password: '2wo1ne8ight',
+          database: 'ladanski_pigeon_db',
+          entities: [__dirname + '/**/*.entity{.ts,.js}'], // path to your entity files
+          synchronize: true, // set to false in production
     }),
     //TypeOrmModule.forRoot({
       // 1. Change the type to 'mysql' (or 'postgres' if applicable)

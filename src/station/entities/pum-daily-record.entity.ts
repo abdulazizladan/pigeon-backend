@@ -49,6 +49,6 @@ export class PumpDailyRecord {
   // Ensures that there is only ONE record per pump per day
   @Index(['pump', 'recordDate'], { unique: true })
   
-  @CreateDateColumn({ default: Date.now() })
+  @CreateDateColumn({ precision: 6 })
   createdAt: Date;
 }

@@ -70,7 +70,7 @@ import { Product } from "../enum/product.enum";
     /**
      * Timestamp when the sale record was created (defaults to now).
      */
-    @CreateDateColumn({ name: 'created_at', default: Date.now() })
+    @CreateDateColumn({ precision: 6 })
     createdAt: Date;
   
     // --- Relationships ---
