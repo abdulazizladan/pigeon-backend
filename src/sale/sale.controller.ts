@@ -41,10 +41,10 @@ import { Product } from './enum/product.enum';
 
 @ApiTags('Sales Management')
 //@ApiBearerAuth()
-@Controller('sales') 
+@Controller('sales')
 //@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class SaleController {
-  constructor(private readonly saleService: SaleService) {}
+  constructor(private readonly saleService: SaleService) { }
 
   // --- CRUD Endpoints ---
 
@@ -65,7 +65,7 @@ export class SaleController {
           openingMeterReading: 1000.0,
           closingMeterReading: 1200.0,
           pumpId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-        } as CreateSaleDto, 
+        } as CreateSaleDto,
       },
     },
   })
@@ -213,7 +213,19 @@ export class SaleController {
     return this.saleService.getTotalSalesPerMonth();
   }
 
-  @ApiOperation({summary: 'Get sales record by station'})
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ summary: 'Get daily sales records per station', description: 'Get aggregated daily sales records for a station.' })
+  @ApiOkResponse({
+    description: 'Daily sales records retrieved.',
+  })
+  @Get('report/daily/station/:stationId')
+  async getDailySalesByStation(
+    @Param('stationId', ParseUUIDPipe) stationId: string
+  ) {
+    return this.saleService.getDailySalesByStation(stationId);
+  }
+
+  @ApiOperation({ summary: 'Get sales record by station' })
   @Get('/station/:id')
   getSalesByStation(@Param('id') id: string) {
     return this.saleService.findAllByStationID(id);

@@ -6,21 +6,20 @@ import { User } from 'src/user/entities/user.entity';
 import { Role } from 'src/user/enums/role.enum';
 import { ApiOperation, ApiTags, ApiBody, ApiOkResponse, ApiUnauthorizedResponse, ApiBadRequestResponse, ApiBearerAuth } from '@nestjs/swagger';
 
-// Assuming these imports are available and correctly configured
-import { AuthGuard } from '@nestjs/passport'; // Used for 'jwt' strategy
-import { RolesGuard } from './roles.guard'; // Your custom RolesGuard
-import { Roles } from './roles.decorator'; // Your custom Roles decorator
-import { Public } from './public.decorator'; // <--- You need this custom decorator
+import { RolesGuard } from './roles.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Roles } from './roles.decorator';
+import { Public } from './public.decorator';
 
 @ApiTags('Authentication')
 @ApiBearerAuth()
 @Controller('auth')
-// REMOVED: @UseGuards(AuthGuard('jwt'), RolesGuard) from here
+@Controller('auth')
 export class AuthController {
 
     constructor(
-        private readonly  authService: AuthService
-    ){
+        private readonly authService: AuthService
+    ) {
 
     }
 
@@ -28,7 +27,7 @@ export class AuthController {
      * Login to the system with email and password.
      */
     @ApiOperation({
-            summary: 'Login',
+        summary: 'Login',
         description: 'Login to the system with email and password'
     })
     @ApiOkResponse({
@@ -47,12 +46,12 @@ export class AuthController {
     }
 
     // ... (register route)
-   
+
     /**
      * Reset user password.
      */
     @ApiOperation({
-            summary: "Password reset",
+        summary: "Password reset",
         description: "Reset user password"
     })
     @ApiOkResponse({
@@ -75,7 +74,7 @@ export class AuthController {
      * Change current user's password
      */
     // **APPLY GUARDS HERE ONLY** (AuthGuard runs first, then RolesGuard)
-    @UseGuards(AuthGuard('jwt'), RolesGuard) 
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
     @Roles(Role.admin, Role.director, Role.manager) // <--- Role check is here
     @ApiOperation({ summary: 'Change password', description: 'Change the password of the authenticated user' })
     @ApiOkResponse({ description: 'Password changed successfully' })

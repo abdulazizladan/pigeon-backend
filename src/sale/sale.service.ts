@@ -10,6 +10,7 @@ import { UpdateSaleDto } from './dto/update-sale.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Pump } from 'src/station/entities/pump.entity';
 import { Station } from 'src/station/entities/station.entity';
+import { PumpDailyRecord } from 'src/station/entities/pum-daily-record.entity';
 
 @Injectable()
 export class SaleService {
@@ -21,8 +22,10 @@ export class SaleService {
     @InjectRepository(Pump)
     private readonly pumpRepository: Repository<Pump>,
     @InjectRepository(Station)
-    private readonly stationRepository: Repository<Station>
-  ) {}
+    private readonly stationRepository: Repository<Station>,
+    @InjectRepository(PumpDailyRecord)
+    private readonly dailyRecordRepository: Repository<PumpDailyRecord>
+  ) { }
 
   // --- CRUD Methods (Refactored for cleaner data/error handling) ---
 
@@ -32,59 +35,90 @@ export class SaleService {
  * @param userId - The ID of the authenticated user recording the sale.
  * @returns The created Sale entity.
  */
-async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
-  // 1. Fetch related entities (Pump and User)
-  const pump = await this.pumpRepository.findOne({
-    // IMPORTANT: Using pumpId from DTO
-    where: { 
-      id: createSaleDto.pumpId 
-    }, 
-    relations: [
-      'station'
-    ], // Eagerly load the Station relation
-  });
+  async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
+    // 1. Fetch related entities (Pump and User)
+    const pump = await this.pumpRepository.findOne({
+      // IMPORTANT: Using pumpId from DTO
+      where: {
+        id: createSaleDto.pumpId
+      },
+      relations: [
+        'station'
+      ], // Eagerly load the Station relation
+    });
 
-  if (!pump) {
-    throw new NotFoundException(`Pump with ID ${createSaleDto.pumpId} not found`);
+    if (!pump) {
+      throw new NotFoundException(`Pump with ID ${createSaleDto.pumpId} not found`);
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    console.log(user)
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // 2. Data Calculation and Validation Check
+    const volumeLiters = createSaleDto.closingMeterReading - createSaleDto.openingMeterReading;
+
+    if (volumeLiters <= 0) {
+      throw new BadRequestException('Closing meter reading must be greater than the opening meter reading.');
+    }
+
+    // Calculate total price and round to 4 decimal places for monetary consistency
+    const totalPrice = parseFloat((volumeLiters * createSaleDto.pricePerLitre).toFixed(4));
+
+    // 3. Create and Save the Sale entity
+    const sale = this.saleRepository.create({
+      // Input fields from DTO
+      product: createSaleDto.product,
+      pricePerLitre: createSaleDto.pricePerLitre,
+      openingMeterReading: createSaleDto.openingMeterReading,
+      closingMeterReading: createSaleDto.closingMeterReading,
+
+      // Calculated fields
+      totalPrice: totalPrice, // CRITICAL: Now correctly assigning the calculated field
+
+      // Relationships
+      pump: pump, // Link to the Pump
+      station: pump.station, // Link to the Station (derived from Pump)
+      recordedBy: user, // Link to the recording User
+    });
+
+    const savedSale = await this.saleRepository.save(sale);
+
+    // 4. Update Pump Daily Record
+    const today = new Date();
+    // Reset time to 00:00:00 for accurate daily grouping
+    today.setHours(0, 0, 0, 0);
+
+    let dailyRecord = await this.dailyRecordRepository.findOne({
+      where: {
+        pump: { id: pump.id },
+        recordDate: today,
+      },
+    });
+
+    if (!dailyRecord) {
+      dailyRecord = this.dailyRecordRepository.create({
+        pump: pump,
+        station: pump.station,
+        recordDate: today,
+        volumeSold: 0,
+        totalRevenue: 0,
+      });
+    }
+
+    // Accumulate volume and revenue
+    // Ensure we are working with numbers
+    dailyRecord.volumeSold = Number(dailyRecord.volumeSold) + volumeLiters;
+    dailyRecord.totalRevenue = Number(dailyRecord.totalRevenue) + totalPrice;
+
+    await this.dailyRecordRepository.save(dailyRecord);
+
+    return savedSale;
   }
-
-  const user = await this.userRepository.findOne({
-    where: { id: userId },
-  });
-  console.log(user)
-  if (!user) {
-    throw new NotFoundException(`User with ID ${userId} not found`);
-  }
-  
-  // 2. Data Calculation and Validation Check
-  const volumeLiters = createSaleDto.closingMeterReading - createSaleDto.openingMeterReading;
-  
-  if (volumeLiters <= 0) {
-    throw new BadRequestException('Closing meter reading must be greater than the opening meter reading.');
-  }
-
-  // Calculate total price and round to 4 decimal places for monetary consistency
-  const totalPrice = parseFloat((volumeLiters * createSaleDto.pricePerLitre).toFixed(4)); 
-
-  // 3. Create and Save the Sale entity
-  const sale = this.saleRepository.create({
-    // Input fields from DTO
-    product: createSaleDto.product,
-    pricePerLitre: createSaleDto.pricePerLitre,
-    openingMeterReading: createSaleDto.openingMeterReading,
-    closingMeterReading: createSaleDto.closingMeterReading,
-    
-    // Calculated fields
-    totalPrice: totalPrice, // CRITICAL: Now correctly assigning the calculated field
-
-    // Relationships
-    pump: pump, // Link to the Pump
-    station: pump.station, // Link to the Station (derived from Pump)
-    recordedBy: user, // Link to the recording User
-  });
- 
-  return this.saleRepository.save(sale);
-}
 
   /**
    * Get all sales records.
@@ -92,11 +126,12 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
    */
   async findAll(): Promise<Sale[]> {
     return this.saleRepository.find(
-      { relations: 
-        [
-          'pump', 
-          'station'
-        ]
+      {
+        relations:
+          [
+            'pump',
+            'station'
+          ]
       }
     );
   }
@@ -110,7 +145,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
       where: { id },
       relations: [
-        'pump', 
+        'pump',
         'station',
         'recordedBy'
       ],
@@ -123,25 +158,21 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
 
   async findAllByStationID(stationId: string) {
     const station = await this.stationRepository.findOne({
-      where: {id: stationId}
+      where: { id: stationId }
     })
-    if(!station) {
+    if (!station) {
       throw new NotFoundException("Station not found")
     }
     const sales = await this.saleRepository.find({
-      where: { id: stationId },
+      where: { station: { id: stationId } },
       relations: [
         'station'
       ]
     })
-    if(!sales) {
+    if (!sales || sales.length === 0) {
       throw new NotFoundException("No sales record for this station found")
     }
-    return {
-      success: true,
-      data: sales,
-      message: `Sales recorsds for station ${stationId} fetched successfully`
-    };
+    return sales;
   }
 
   /**
@@ -162,14 +193,14 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
 
     // 2. Recalculate totalPrice if meter readings or price changed
     const volumeLiters = existingSale.closingMeterReading - existingSale.openingMeterReading;
-    
+
     if (volumeLiters <= 0) {
-        throw new BadRequestException('Closing meter reading must be greater than the opening meter reading after update.');
+      throw new BadRequestException('Closing meter reading must be greater than the opening meter reading after update.');
     }
 
     // Recalculate and assign the new total price
     existingSale.totalPrice = parseFloat((volumeLiters * existingSale.pricePerLitre).toFixed(4));
-    
+
     // 3. Save the entity to trigger listeners and update all fields
     return this.saleRepository.save(existingSale);
   }
@@ -197,7 +228,7 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
       .createQueryBuilder('sale')
       .select('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .getRawOne();
-    
+
     return parseFloat(result.totalSale || 0);
   }
 
@@ -230,8 +261,8 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
       .getRawMany();
 
     return rawSalesData.map(data => ({
-        week: parseInt(data.week, 10),
-        totalSale: parseFloat(data.totalSale),
+      week: parseInt(data.week, 10),
+      totalSale: parseFloat(data.totalSale),
     }));
   }
 
@@ -249,8 +280,23 @@ async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
       .getRawMany();
 
     return rawSalesData.map(data => ({
-        month: data.month,
-        totalSale: parseFloat(data.totalSale),
+      month: data.month,
+      totalSale: parseFloat(data.totalSale),
     }));
+  }
+
+  /**
+   * 🗓️ Calculated daily sales record per station
+   */
+  async getDailySalesByStation(stationId: string, date?: string): Promise<PumpDailyRecord[]> {
+    const query = this.dailyRecordRepository.createQueryBuilder('record')
+      .leftJoinAndSelect('record.pump', 'pump')
+      .where('record.station_id = :stationId', { stationId });
+
+    if (date) {
+      query.andWhere('record.recordDate = :date', { date });
+    }
+
+    return query.getMany();
   }
 }

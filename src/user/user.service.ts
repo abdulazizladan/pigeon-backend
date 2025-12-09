@@ -19,7 +19,7 @@ export class UserService {
     private readonly infoRepository: Repository<Info>,
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>
-  ) {}
+  ) { }
 
   /**
    * Creates a new user in the database, including related contact and info.
@@ -35,17 +35,9 @@ export class UserService {
         contact: await this.contactRepository.save(createUserDto.contact),
         info: await this.infoRepository.save(createUserDto.info)
       });
-      await this.userRepository.save(user);
-      return {
-        success: true,
-        data: user,
-        message: 'User added successfully'
-      }
+      return await this.userRepository.save(user);
     } catch (error) {
-      return {
-        success: false,
-        messahe: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -55,31 +47,24 @@ export class UserService {
    */
   async getStats() {
     const totalUsers = await this.userRepository.count()
-    const activeUsers = await this.userRepository.countBy({status: Status.active})
-    const suspendedUsers = await this.userRepository.countBy({status: Status.suspended})
-    const removedUsers = await this.userRepository.countBy({status: Status.removed})
-    const adminCount = await this.userRepository.countBy({role: Role.admin})
-    const directorsCount = await this.userRepository.countBy({role: Role.director})
-    const managersCount = await this.userRepository.countBy({role: Role.manager})
+    const activeUsers = await this.userRepository.countBy({ status: Status.active })
+    const suspendedUsers = await this.userRepository.countBy({ status: Status.suspended })
+    const removedUsers = await this.userRepository.countBy({ status: Status.removed })
+    const adminCount = await this.userRepository.countBy({ role: Role.admin })
+    const directorsCount = await this.userRepository.countBy({ role: Role.director })
+    const managersCount = await this.userRepository.countBy({ role: Role.manager })
     try {
       return {
-        success: true,
-        data: {
-          total: totalUsers,
-          active: activeUsers,
-          suspended: suspendedUsers,
-          removed: removedUsers,
-          admin: adminCount,
-          directors: directorsCount,
-          managers: managersCount
-        },
-        message: "Status fetched successfully"
+        total: totalUsers,
+        active: activeUsers,
+        suspended: suspendedUsers,
+        removed: removedUsers,
+        admin: adminCount,
+        directors: directorsCount,
+        managers: managersCount
       }
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -90,14 +75,14 @@ export class UserService {
   async findAll() {
     const users = await this.userRepository.find({
       relations: [
-        'info', 
+        'info',
         'contact',
         'station',
       ],
       select: [
-        'email', 
-        'contact', 
-        'info', 
+        'email',
+        'contact',
+        'info',
         'station',
         'role',
         'status'
@@ -110,10 +95,7 @@ export class UserService {
         message: users.length === 0 ? 'No users found' : 'Users fetched successfully'
       }
     } catch (error) {
-      return{
-        success: false,
-        message: 'Error fetching users'
-      }
+      throw new InternalServerErrorException('Error fetching users');
     }
   }
 
@@ -126,37 +108,25 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne(
         {
-          where: {email}, 
-            relations: [
-              'info',
-              'contact',
-              'reports',
-              'tickets',
-              'station'
-            ]
-          }
-        );
-      if(user) {
-        return {
-          success: true,
-          data: user,
-          message: "User found"
+          where: { email },
+          relations: [
+            'info',
+            'contact',
+            'reports',
+            'tickets',
+            'station'
+          ]
         }
-      }else {
-        return {
-          success: false,
-          data: null,
-          message: "User not found"
-        }
+      );
+      if (user) {
+        return user;
+      } else {
+        throw new NotFoundException("User not found");
       }
-      
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
-    
+
   }
 
   /**
@@ -165,34 +135,27 @@ export class UserService {
    * @returns An object with the user or a message if not found
    */
   async findByEmail(email: string): Promise<any> {
-    try{
+    try {
       const user = await this.userRepository.findOne({
-        where: {email}
+        where: { email }
       })
-      if(user) {
+      if (user) {
         return {
-          success: true, 
+          success: true,
           data: user,
           message: "User found"
         }
       } else {
-        return {
-          success: false, 
-          data: null,
-          message: "User not found"
-        }
+        throw new NotFoundException("User not found");
       }
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
-    
+
   }
 
   async findManagers(): Promise<any> {
-    try{
+    try {
       const managers = await this.userRepository.find({
         where: {
           role: Role.manager
@@ -203,9 +166,9 @@ export class UserService {
         ],
         select: [
           'id',
-          'email', 
-          'contact', 
-          'info', 
+          'email',
+          'contact',
+          'info',
           'role',
           'status'
         ]
@@ -213,10 +176,7 @@ export class UserService {
       return managers;
 
     } catch (error) {
-      return{
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -226,33 +186,33 @@ export class UserService {
    * @returns 
    */
   async findManagerByID(id: string): Promise<any> {
-    try{
+    try {
       const manager = await this.userRepository.findOne({
-        where: {id},
+        where: { id },
         relations: {
-          info: true, 
-          contact: true, 
+          info: true,
+          contact: true,
           station: {
             stock: true
           },
         },
         select: [
           'id',
-          'email', 
-          'contact', 
-          'info', 
+          'email',
+          'contact',
+          'info',
           'role',
           'status',
           'station',
           'lastUpdated'
         ]
       })
+      if (!manager) {
+        throw new NotFoundException(`Manager with ID ${id} not found`);
+      }
       return manager
     } catch (error) {
-      return{
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -265,24 +225,24 @@ export class UserService {
   async update(email: string, updateUserDto: UpdateUserDto) {
 
     const updateResult: UpdateResult = await this.userRepository.update(
-      {email: email},
+      { email: email },
       updateUserDto
     )
-    if(updateResult.affected === 0) {
+    if (updateResult.affected === 0) {
       throw new NotFoundException(`User with email ${email} not found`)
     }
 
     const updatedUser = this.userRepository.findOne({
-      where: {email},
+      where: { email },
       relations: ['contact', 'info']
     })
 
-    if(!updatedUser) {
+    if (!updatedUser) {
       throw new NotFoundException('User not found')
     }
 
     return updatedUser;
-    
+
   }
 
   /**
@@ -291,33 +251,27 @@ export class UserService {
    * @returns An object indicating success or failure and a message
    */
   async remove(email: string) {
-    const user  = await this.userRepository.findOne(
+    const user = await this.userRepository.findOne(
       {
         where: { email }
-    }
-  )
+      }
+    )
     try {
-      if(user) {
+      if (user) {
         await this.userRepository.remove(user);
         return {
           success: true,
           message: "User deleted successfully"
         }
       } else {
-        return {
-          success: false,
-          message: `User with email ${email} not found`
-        }
+        throw new NotFoundException(`User with email ${email} not found`);
       }
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
-  async getAvailableMAnagers() {
+  async getAvailableManagers() {
     const managers = await this.userRepository.find(
       {
         where: {
@@ -327,18 +281,11 @@ export class UserService {
       }
     )
     try {
-      if(managers) {
-        return {
-          success: true,
-          data: managers,
-          message: 'Managers fetched successfully'
-        }
+      if (managers) {
+        return managers;
       }
-    } catch(error) {
-      return {
-        success: false,
-        message: error.message
-      }
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

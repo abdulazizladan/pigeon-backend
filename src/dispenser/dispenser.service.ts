@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { CreateDispenserDto } from './dto/create-dispenser.dto';
 import { UpdateDispenserDto } from './dto/update-dispenser.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,17 +22,12 @@ export class DispenserService {
    * @returns Success or error response with message
    */
   async create(createDispenserDto: CreateDispenserDto) {
-    try { 
+    try {
       // Create and save a new dispenser entity
-      const dispenser =  await this.dispenserRepository.create(createDispenserDto)
-      const newDispenser = await this.dispenserRepository.save(dispenser)
-      return {
-        success: true,
-        data: newDispenser,
-        message: "Dispenser added successfully"
-      }
+      const dispenser = this.dispenserRepository.create(createDispenserDto)
+      return await this.dispenserRepository.save(dispenser)
     } catch (error) {
-      throw new NotFoundException(`error: ${error.message}`)
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -41,18 +36,18 @@ export class DispenserService {
    * @returns Object containing dispenser stats
    */
   async getSummary() {
-    // Count total, active, and inactive dispensers
-    const totalDispensers = await this.dispenserRepository.count()
-    const activeDispensers = await this.dispenserRepository.count({ where: { status: 'active' as any } })
-    const inactiveDispensers = await this.dispenserRepository.count({ where: { status: 'inactive' as any } })
-    return {
-      success: true,
-      data: {
+    try {
+      // Count total, active, and inactive dispensers
+      const totalDispensers = await this.dispenserRepository.count()
+      const activeDispensers = await this.dispenserRepository.count({ where: { status: 'active' as any } })
+      const inactiveDispensers = await this.dispenserRepository.count({ where: { status: 'inactive' as any } })
+      return {
         total: totalDispensers,
         active: activeDispensers,
         inactive: inactiveDispensers
-      },
-      message: "Dispenser stats found"
+      }
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -68,25 +63,10 @@ export class DispenserService {
       }
     })
     try {
-      if(dispensers.length != 0){
-        return {
-          success: true, 
-          data: dispensers,
-          message: "dispensers fetched successfully"
-        }
-      }else {
-        return {
-          success: true,
-          data: null,
-          message: "no dispensers found"
-        }
-      }
+      return dispensers;
     } catch (error) {
       // Return error message if fetching fails
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -99,9 +79,9 @@ export class DispenserService {
     // Find dispenser by ID with related sales
     const dispenser = await this.dispenserRepository.findOne(
       {
-        where: 
-        { 
-          id: id 
+        where:
+        {
+          id: id
         },
         relations: {
           sales: true
@@ -109,22 +89,13 @@ export class DispenserService {
       }
     )
     try {
-      if(dispenser){
-        return {
-          success: true, 
-          data: dispenser,
-          message: "dispenser fetched successfully"
-        }
-      }else {
-        // Throw NotFoundException if dispenser does not exist
-        throw new NotFoundException();
+      if (!dispenser) {
+        throw new NotFoundException(`Dispenser with ID ${id} not found`);
       }
+      return dispenser;
     } catch (error) {
       // Return error message if fetching fails
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -137,18 +108,14 @@ export class DispenserService {
   async update(id: string, updateDispenserDto: UpdateDispenserDto) {
     try {
       // Update dispenser with new data
-      await this.dispenserRepository.update(id, updateDispenserDto)
-      return {
-        success: true,
-        data: updateDispenserDto,
-        message: "Dispenser updated successfully"
+      const result = await this.dispenserRepository.update(id, updateDispenserDto);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Dispenser with ID ${id} not found`);
       }
+      return this.findOne(id);
     } catch (error) {
       // Return error message if update fails
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -157,20 +124,20 @@ export class DispenserService {
    * @param id - The ID of the dispenser to delete
    * @returns Success or error response with message
    */
-  remove(id: string) {
+  async remove(id: string) {
     try {
       // Delete dispenser by ID
-      this.dispenserRepository.delete(id)
+      const result = await this.dispenserRepository.delete(id);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Dispenser with ID ${id} not found`);
+      }
       return {
         success: true,
         message: "Dispenser deleted successfully"
       }
     } catch (error) {
       // Return error message if deletion fails
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Station } from './entities/station.entity';
@@ -22,22 +22,18 @@ export class StationService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(PumpDailyRecord)
     private readonly dailyRecordRepository: Repository<PumpDailyRecord>,
-  ) {}
+  ) { }
 
   /**
    * Creates a new station in the database, including assigning a manager and creating pumps.
    * @param createStationDto - DTO containing station details, managerId, and pumps array.
    * @returns An object indicating success or failure and a message
    */
-  /**
-   * Creates a new station in the database, including assigning a manager and creating pumps.
-   * @param createStationDto - DTO containing station details, managerId, and pumps array.
-   * @returns An object indicating success or failure and a message
-   */
+
   async create(createStationDto: CreateStationDto) {
     // Destructure properties that handle relationships
     const { managerId, pumps, ...stationDetails } = createStationDto; // <-- Destructures 'pumps' array
-    
+
     try {
       // 1. Handle Manager Assignment (omitted for brevity)
       let manager: User | undefined;
@@ -54,27 +50,23 @@ export class StationService {
 
       // 4. Handle Pump Creation (if provided) <-- This handles the dynamic array of pumps
       if (pumps && pumps.length > 0) {
-        const pumpEntities = pumps.map(pumpDto => 
+        const pumpEntities = pumps.map(pumpDto =>
           this.pumpRepository.create({
             ...pumpDto,
             station: newStation, // Assign the newly created station entity
           })
         );
         // Use insert for bulk creation performance
-        await this.pumpRepository.insert(pumpEntities); 
-        
+        await this.pumpRepository.insert(pumpEntities);
+
         // Re-fetch or manually assign entities for the response
         newStation.pumps = pumpEntities;
       }
-      
+
       // Return the newly created station object (which now includes pumps if created)
-      return {
-        success: true,
-        data: newStation,
-        message: 'Station and associated entities created successfully',
-      }
-    } catch (error ) {
-      // ... error handling
+      return newStation;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -84,107 +76,77 @@ export class StationService {
    */
   async getSummary() {
     const totalStations = await this.stationRepository.count();
-    const activeStations = await this.stationRepository.count({where: { status: 'active' }});
-    const inactiveStations = await this.stationRepository.count({where: { status: 'inactive' }});
+    const activeStations = await this.stationRepository.count({ where: { status: 'active' } });
+    const inactiveStations = await this.stationRepository.count({ where: { status: 'inactive' } });
 
     return {
-      success: true,
-      data: {
-        total: totalStations,
-        active: activeStations,
-        inactive: inactiveStations,
-      },
-      message: 'Station stats found'
+      total: totalStations,
+      active: activeStations,
+      inactive: inactiveStations,
     }
   }
 
   /**
    * Retrieves all stations from the database.
-   * @returns An object with all stations or a message if none are found
+   * @returns A list of all stations.
    */
   async findAll() {
-    const stations = await this.stationRepository.find(
-      {
-        relations: {
-          'manager': {
-            'info': true
+    try {
+      const stations = await this.stationRepository.find(
+        {
+          relations: {
+            'manager': {
+              'info': true
+            },
+            'pumps': true,
+            'stock': true
           },
-          'pumps': true,
-          'stock': true
-        },
-        order: {
-          stock: {
-            dateTaken: 'desc'
+          order: {
+            stock: {
+              dateTaken: 'desc'
+            }
           }
         }
-      }
-    );
-    try {
-      if( stations.length === 0) {
-      return {
-        success: true,
-        data: null,
-        message: 'No stations found'
-      }
-      }else 
-      return {
-        success: true,
-        data: stations,
-        message: 'Stations found'
-      }
-    }catch (error) {
-      return {
-        success: false,
-        error: error.message
-      }
+      );
+      return stations;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
   /**
    * Retrieves a single station by its ID, including the manager relation.
    * @param id - The ID of the station
-   * @returns An object with the station or a message if not found
+   * @returns The station object.
    */
   async findOne(id: string) {
-    const station = await this.stationRepository.findOne(
-      {
-        where: { id },
-        relations: {
-          manager: {
-            info: true
-          },
-          pumps: true,
-          dispensers: true
-        }
-      }
-    );
     try {
-      if( station === null) {
-        return {
-          success: false,
-          data: null,
-          message: 'Station not found'
+      const station = await this.stationRepository.findOne(
+        {
+          where: { id },
+          relations: {
+            manager: {
+              info: true
+            },
+            pumps: true,
+            dispensers: true
+          }
         }
-      }else {
-        return {
-          success: true,
-          data: station,
-          message: 'Station found'
-        }
+      );
+      if (!station) {
+        throw new NotFoundException('Station not found');
       }
-      }catch (error) {
-        return {
-          success: false,
-          error: error.message
-        }
-      }
+      return station;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   /**
    * Updates a station by its ID, including manager assignment.
-   * * @param id - The ID of the station (string assumed for UUID primary key)
+   * @param id - The ID of the station
    * @param updateStationDto - DTO containing updated station data and optional managerId
-   * @returns An object with the updated station data or a message if not found
+   * @returns The updated station data.
    */
   async update(id: string, updateStationDto: UpdateStationDto) {
     // Separate managerId and pumps (pumps are ignored for complex updates here)
@@ -195,30 +157,26 @@ export class StationService {
       const existingStation = await this.stationRepository.findOne({ where: { id } });
 
       if (!existingStation) {
-        return {
-          success: false,
-          data: null,
-          message: `Station with ID ${id} not found`,
-        };
+        throw new NotFoundException(`Station with ID ${id} not found`);
       }
-      
+
       // 2. Handle Manager Assignment (if managerId is provided)
       let managerToAssign: User | undefined | null = undefined;
 
       if (managerId !== undefined) {
-          if (managerId === null || managerId === "") {
-              // If managerId is explicitly null/empty string, unassign the current manager
-              managerToAssign = null;
-          } else {
-              // Find the new manager
-              const foundManager = await this.userRepository.findOne({ where: { id: managerId } });
-              if (!foundManager) {
-                  return { success: false, message: `Manager not found.` };
-              }
-              managerToAssign = foundManager;
+        if (managerId === null || managerId === "") {
+          // If managerId is explicitly null/empty string, unassign the current manager
+          managerToAssign = null;
+        } else {
+          // Find the new manager
+          const foundManager = await this.userRepository.findOne({ where: { id: managerId } });
+          if (!foundManager) {
+            throw new NotFoundException(`Manager with ID ${managerId} not found.`);
           }
+          managerToAssign = foundManager;
+        }
       }
-      
+
       // 3. Merge Station Details and Manager
       // Note: We ignore the 'pumps' field from the DTO for updates, as complex nested array updates 
       // (like adding/deleting pumps) are usually handled via dedicated endpoints/service methods.
@@ -255,56 +213,41 @@ export class StationService {
       // 4. Save the merged entity to execute the update
       const updatedStation = await this.stationRepository.save(existingStation);
 
-      return {
-        success: true,
-        data: updatedStation,
-        message: 'Station updated successfully',
-      };
+      return updatedStation;
 
     } catch (error) {
-      // Handle potential database errors or validation errors
       console.error('Error updating station:', error);
-      return {
-        success: false,
-        message: 'Error updating station',
-        error: error.message,
-      };
+      throw new InternalServerErrorException(error.message);
     }
   }
 
   /**
    * Deletes a station by its ID.
-   * @param id - The ID of the station (string assumed for consistency)
+   * @param id - The ID of the station
    * @returns An object indicating success or failure and a message
    */
   async remove(id: string) {
     try {
       const result = await this.stationRepository.delete(id);
-      
+
       if (result.affected === 0) {
-        return {
-          success: false,
-          message: `Station with ID ${id} not found`,
-        }
+        throw new NotFoundException(`Station with ID ${id} not found`);
       }
 
       return {
         success: true,
         message: 'Station deleted successfully'
       }
-    }catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
   /**
-   * 🏆 Assigns a manager (User) to a Station.
+   * Assigns a manager (User) to a Station.
    * @param stationId - The ID of the station
    * @param managerId - The ID of the user to assign as manager
-   * @returns An object with the updated station data
+   * @returns The updated station data.
    */
   async assignManager(stationId: string, managerId: string) {
     // 1. Find the existing station entity
@@ -318,12 +261,12 @@ export class StationService {
     const manager = await this.userRepository.findOne({ where: { id: managerId } });
 
     if (!manager) {
-      return { success: false, message: `User with ID ${managerId} not found.` };
+      throw new NotFoundException(`User with ID ${managerId} not found.`);
     }
-    
+
     // Optional: Add validation that the user's role is 'manager'
     if (manager.role !== Role.manager) {
-        return { success: false, message: `User with ID ${managerId} is not a Manager. Current role: ${manager.role}` };
+      throw new BadRequestException(`User with ID ${managerId} is not a Manager. Current role: ${manager.role}`);
     }
 
     // 3. Assign the manager to the station
@@ -332,11 +275,7 @@ export class StationService {
     // 4. Save the updated station entity
     const updatedStation = await this.stationRepository.save(station);
 
-    return {
-      success: true,
-      data: updatedStation,
-      message: 'Manager assigned successfully',
-    };
+    return updatedStation;
   }
 
   /**
@@ -347,13 +286,13 @@ export class StationService {
   async unassignManager(stationId: string) {
     // 1. Find the existing station entity
     const station = await this.stationRepository.findOne(
-      { 
-        where: { 
-          id: stationId 
+      {
+        where: {
+          id: stationId
         },
         relations: {
           manager: true
-        } 
+        }
       }
     );
 
@@ -363,13 +302,9 @@ export class StationService {
 
     // 2. Check if a manager is currently assigned (optional check)
     if (!station.manager) {
-        return {
-            success: true,
-            data: station,
-            message: 'No manager was assigned to this station',
-        };
+      return station;
     }
-    
+
     // 3. Unassign the manager (set to null)
     station.manager = null;
 
@@ -379,11 +314,7 @@ export class StationService {
     // Note: The User entity's `station` field is also updated by TypeORM's
     // cascade/inverse side logic (OneToOne relation).
 
-    return {
-      success: true,
-      data: updatedStation,
-      message: 'Manager unassigned successfully',
-    };
+    return updatedStation;
   }
 
   async recordDailySales(recordSalesDto: RecordSalesDto) {
@@ -396,7 +327,7 @@ export class StationService {
         recordDate: new Date(recordDate),
       },
       // Select the pump relation to get the stationId for the record
-      relations: ['pump', 'pump.station'], 
+      relations: ['pump', 'pump.station'],
     });
 
     // 1. Get the Station ID from the Pump (needed for the denormalized column)
@@ -404,7 +335,7 @@ export class StationService {
     // Assuming you have a PumpRepository injected or you fetch it here:
     // const pump = await this.pumpRepository.findOne({ where: { id: pumpId }, relations: ['station'] });
     // const stationId = pump.station.id;
-    
+
     // For simplicity, we'll assume the Pump entity is correctly linked via TypeORM.
     // If you add the stationId to the DTO, it simplifies things.
 
@@ -437,17 +368,17 @@ export class StationService {
       // Join to Station and Pump entities to access station name
       .innerJoin('record.station', 'station')
       .innerJoin('record.pump', 'pump')
-      
+
       // Select the grouping columns and aggregation columns
       .select('station.name', 'stationName')
       .addSelect('record.recordDate', 'date')
       .addSelect('SUM(record.volumeSold)', 'totalVolumeSold')
       .addSelect('SUM(record.totalRevenue)', 'totalDailyRevenue')
-      
+
       // Group the results by the Station Name and the Day
       .groupBy('station.name')
       .addGroupBy('record.recordDate')
-      
+
       // Order the results for better readability
       .orderBy('record.recordDate', 'DESC')
       .addOrderBy('station.name', 'ASC')
@@ -460,5 +391,5 @@ export class StationService {
       message: 'Aggregated daily sales by station retrieved successfully',
     };
   }
-  
+
 }

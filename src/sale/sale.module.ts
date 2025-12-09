@@ -9,6 +9,7 @@ import { Pump } from 'src/station/entities/pump.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Station } from 'src/station/entities/station.entity';
 import { UserModule } from 'src/user/user.module';
+import { PumpDailyRecord } from 'src/station/entities/pum-daily-record.entity';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { UserModule } from 'src/user/user.module';
         Dispenser,
         Pump,
         User,
-        Station
+        Station,
+        PumpDailyRecord
       ]
     ),
     UserModule
@@ -31,4 +33,4 @@ import { UserModule } from 'src/user/user.module';
     SaleService
   ],
 })
-export class SaleModule {}
+export class SaleModule { }

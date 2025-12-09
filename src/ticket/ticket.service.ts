@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
@@ -17,7 +17,7 @@ export class TicketService {
 
     @InjectRepository(Reply)
     private readonly replyRepository: Repository<Reply>
-  ) {}
+  ) { }
 
   /**
    * Creates a new ticket in the database.
@@ -26,7 +26,7 @@ export class TicketService {
    */
   async create(createTicketDto: CreateTicketDto) {
     const ticket = this.ticketRepository.create(createTicketDto);
-    return await this.ticketRepository.save(ticket); 
+    return await this.ticketRepository.save(ticket);
   }
 
   /**
@@ -34,19 +34,15 @@ export class TicketService {
    * @returns An object containing ticket stats and a message
    */
   async getStats() {
-    const activeTickets = await this.ticketRepository.count({where: {status: Status.active}})
-    const resolvedTickets = await this.ticketRepository.count({where: {status: Status.resolved}})
-    const terminatedTickets = await this.ticketRepository.count({where: {status: Status.terminated}})
+    const activeTickets = await this.ticketRepository.count({ where: { status: Status.active } })
+    const resolvedTickets = await this.ticketRepository.count({ where: { status: Status.resolved } })
+    const terminatedTickets = await this.ticketRepository.count({ where: { status: Status.terminated } })
     const totalTickets = await this.ticketRepository.count()
     return {
-      success: true,
-      data: {
-        total: totalTickets,
-        active: activeTickets,
-        resolved: resolvedTickets,
-        dismissed: terminatedTickets
-      },
-      message: "Ticket stats"
+      total: totalTickets,
+      active: activeTickets,
+      resolved: resolvedTickets,
+      dismissed: terminatedTickets
     }
   }
 
@@ -63,19 +59,19 @@ export class TicketService {
       relations: ['replies'], // Load existing replies to update the array
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
-  
+
     const reply = this.replyRepository.create({
       ...replyData,
       ticket, // Set the ticket relation
     });
-  
+
     await this.replyRepository.save(reply); // Save the reply
-  
+
     // Optional: Update the ticket's replies array (for in-memory consistency)
     if (!ticket.replies) ticket.replies = [];
     ticket.replies.push(reply);
     await this.ticketRepository.save(ticket); // Save the updated ticket
-  
+
     return reply;
   }
 
@@ -90,16 +86,9 @@ export class TicketService {
       ]
     })
     try {
-      return {
-        success: true,
-        data: ticket,
-        message: "Tickets fetched succesfully"
-      }
+      return ticket;
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -114,21 +103,17 @@ export class TicketService {
         relations: [
           'replies',
           'sender'
-        ], 
-        where: {id}
+        ],
+        where: { id }
       }
     )
     try {
-      return {
-        success: true,
-        data: ticket,
-        message: "Ticket fetched succesfully"
+      if (!ticket) {
+        throw new NotFoundException('Ticket not found');
       }
+      return ticket;
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -139,7 +124,7 @@ export class TicketService {
    */
   findByEmail(email: string) {
     return this.ticketRepository.find({
-      where: {"sender": {email}},
+      where: { "sender": { email } },
       relations: [
         'sender'
       ]
@@ -152,20 +137,15 @@ export class TicketService {
    * @param updateTicketDto - DTO containing updated ticket data
    * @returns An object with the update result and a message
    */
-  update(id: string, updateTicketDto: UpdateTicketDto) {
+  async update(id: string, updateTicketDto: UpdateTicketDto) {
     try {
-      const ticket = this.ticketRepository.update({id}, updateTicketDto)
-      return {
-        success: true,
-        data: ticket,
-        message: "Ticket updated successfully"
+      const result = await this.ticketRepository.update({ id }, updateTicketDto);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Ticket with ID ${id} not found`);
       }
-    }
-    catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      return this.findOne(id);
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -174,18 +154,18 @@ export class TicketService {
    * @param id - The ID of the ticket
    * @returns An object with the deletion status and a message
    */
-  remove(id: number) {
+  async remove(id: number) {
     try {
-      this.ticketRepository.delete(id)
+      const result = await this.ticketRepository.delete(id);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Ticket with ID ${id} not found`);
+      }
       return {
         success: true,
         message: "Ticket deleted successfully"
       }
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

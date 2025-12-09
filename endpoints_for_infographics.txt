@@ -1,0 +1,222 @@
+# Backend Endpoints for Infographics & Reporting
+
+This document outlines the API endpoints available for generating infographics, charts, and performance reports in the Angular frontend.
+
+## 1. Sales Reporting Aggregations
+These endpoints provide aggregated data suitable for charts (line charts, bar charts) and summary cards.
+
+### Get Total Sales Revenue
+- **Endpoint:** `GET /sales/report/total`
+- **Description:** Returns the grand total of monetary sales across all stations.
+- **Access:** Director, Manager
+- **Response Format:**
+  ```json
+  {
+    "totalSale": 1254300.50
+  }
+  ```
+
+### Get Total Sales by Station
+- **Endpoint:** `GET /sales/report/station/:stationId/total`
+- **Description:** Returns the total monetary sales for a specific station.
+- **Access:** Director, Manager
+- **Response Format:**
+  ```json
+  {
+    "totalSale": 500000.75
+  }
+  ```
+
+### Get Weekly Sales Trends
+- **Endpoint:** `GET /sales/report/weekly`
+- **Description:** Returns sales revenue aggregated by week of the current year. Good for weekly performance trend graphs.
+- **Access:** Director, Manager
+- **Response Format:**
+  ```json
+  [
+    { "week": 44, "totalSale": 120000.00 },
+    { "week": 45, "totalSale": 150000.00 }
+  ]
+  ```
+
+### Get Monthly Sales Trends
+- **Endpoint:** `GET /sales/report/monthly`
+- **Description:** Returns sales revenue aggregated by month. Good for monthly performance trend graphs.
+- **Access:** Director, Manager
+- **Response Format:**
+  ```json
+  [
+    { "month": "2024-10", "totalSale": 400000.00 },
+    { "month": "2024-11", "totalSale": 480000.00 }
+  ]
+  ```
+
+### Get Daily Sales per Station
+- **Endpoint:** `GET /sales/report/daily/station/:stationId`
+- **Description:** Returns detailed daily sales records for a specific station.
+- **Access:** Director, Manager
+
+---
+
+## 2. Station Performance & Stats
+
+### Get Station Statistics
+- **Endpoint:** `GET /station/stats`
+- **Description:** Returns high-level statistics about stations (e.g., total stations, active status, etc. - exact fields depend on service implementation).
+- **Access:** Director, Admin
+
+### Get Aggregated Daily Sales Report
+- **Endpoint:** `GET /station/report/daily`
+- **Description:** Returns daily sales grouped by Station and Day. Useful for comparing performance across stations on a daily basis.
+- **Access:** Director
+- **Response Format:**
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "stationName": "Eagle Fuel Depot",
+        "date": "2025-11-03",
+        "totalVolumeSold": 12000.50,
+        "totalDailyRevenue": 1980000.00
+      }
+    ],
+    "message": "Aggregated daily sales by station retrieved successfully"
+  }
+  ```
+
+---
+
+## 3. General Data Access
+If raw data is needed for custom client-side aggregation.
+
+### Get All Reports
+- **Endpoint:** `GET /report`
+- **Description:** List all general reports.
+- **Access:** Admin, Director
+
+### Get All Sales
+- **Endpoint:** `GET /sales`
+- **Description:** List all individual sale transactions.
+- **Access:** Director, Manager
+
+### Get Sales by Station
+- **Endpoint:** `GET /sales/station/:id`
+- **Description:** List all sales for a specific station ID.
+- **Access:** (Open/Unspecified in Controller, usually protected)
+
+### Get All Stations
+- **Endpoint:** `GET /station`
+- **Description:** List all stations with their details (location, pumps, manager).
+- **Access:** Director
+
+---
+
+## 4. Response Models
+Below are the TypeScript interfaces representing the data structures returned by the endpoints.
+
+### Station & Sales Models
+
+#### Station
+```typescript
+interface Station {
+  id: string; // UUID
+  name: string; // e.g. "Eagle Fuel Depot"
+  address: string;
+  ward: string;
+  lga: string;
+  state: string;
+  longitude: number;
+  latitude: number;
+  pricePerLiter: number;
+  status: "active" | "inactive";
+  manager?: User;
+  sales?: Sale[];   // Optional, loaded if requested
+  pumps?: Pump[];   // Optional, loaded if requested
+  createdAt: string; // ISO Date
+  lastUpdated: string; // ISO Date
+}
+```
+
+#### Pump
+```typescript
+interface Pump {
+  id: string; // UUID
+  pumpNumber: number;
+  dispensedProduct: string; // 'PETROL', 'DIESEL'
+  stationId?: string;
+}
+```
+
+#### Sale
+```typescript
+interface Sale {
+  id: string; // UUID
+  product: string; // 'PETROL', 'DIESEL'
+  pricePerLitre: number;
+  openingMeterReading: number;
+  closingMeterReading: number;
+  totalPrice: number;
+  createdAt: string; // ISO Date
+  recordedBy?: User;
+  station?: Station;
+  pump?: Pump;
+}
+```
+
+#### User
+```typescript
+interface User {
+  id: string; // UUID
+  email: string;
+  role: 'admin' | 'director' | 'manager';
+  status: 'active' | 'inactive';
+  firstName?: string; // Derived from Info entity
+  lastName?: string;  // Derived from Info entity
+}
+```
+
+### Report Models
+
+#### PumpDailyRecord (Daily Sales Item)
+```typescript
+interface PumpDailyRecord {
+  id: string;
+  recordDate: string; // YYYY-MM-DD
+  volumeSold: number;
+  totalRevenue: number;
+  pump?: Pump;
+}
+```
+
+#### AggregatedDailySalesItem
+```typescript
+interface AggregatedDailySalesItem {
+  stationName: string;
+  date: string; // YYYY-MM-DD
+  totalVolumeSold: number;
+  totalDailyRevenue: number;
+}
+```
+
+#### StationStats
+```typescript
+interface StationStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+```
+
+#### SalesTrends
+```typescript
+interface WeeklySalesTrend {
+  week: number;
+  totalSale: number;
+}
+
+interface MonthlySalesTrend {
+  month: string; // "YYYY-MM"
+  totalSale: number;
+}
+```

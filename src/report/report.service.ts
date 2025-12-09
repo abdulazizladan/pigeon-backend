@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { MonthlyReport } from './entities/report.entity';
@@ -11,7 +11,7 @@ export class ReportService {
   constructor(
     @InjectRepository(MonthlyReport)
     private readonly reportRepository: Repository<MonthlyReport>
-  ) {}
+  ) { }
 
   /**
    * Creates a new monthly report in the database.
@@ -19,19 +19,11 @@ export class ReportService {
    * @returns An object indicating success or failure, the report data, and a message
    */
   async create(createReportDto: CreateReportDto) {
-    const report = await this.reportRepository.create(createReportDto)
+    const report = this.reportRepository.create(createReportDto)
     try {
-      this.reportRepository.save(report);
-      return {
-        success: true,
-        data: report,
-        message: "Report generated successfully."
-      }
+      return await this.reportRepository.save(report);
     } catch (error) {
-      return {
-        success: false, 
-        error: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -40,19 +32,10 @@ export class ReportService {
    * @returns An object with all reports or a message if none are found
    */
   async findAll() {
-    const reports = await this.reportRepository.find();
-    if( reports.length === 0) {
-      return {
-        success: true,
-        data: null,
-        message: "No reports found"
-      }
-    }else{
-      return {
-        success: true,
-        data: reports,
-        message: "Reports found"
-      }
+    try {
+      return await this.reportRepository.find();
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -71,20 +54,12 @@ export class ReportService {
           ]
         }
       );
-      if(report) {
-        return {
-          success: true,
-          data: report,
-          message: "Report found"
-        }
-      }else {
+      if (!report) {
         throw new NotFoundException("Report not found")
       }
+      return report;
     } catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -94,20 +69,16 @@ export class ReportService {
    * @param updateReportDto - DTO containing updated report data
    * @returns An object indicating success or failure and a message
    */
-  update(id: string, updateReportDto: UpdateReportDto) {
+  async update(id: string, updateReportDto: UpdateReportDto) {
     try {
-      this.reportRepository.update(id, updateReportDto);
-      return {
-        success: true,
-        data: updateReportDto,
-        message: "Report updated successfully"
+      const result = await this.reportRepository.update(id, updateReportDto);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Report with ID ${id} not found`);
       }
+      return this.findOne(id);
     }
     catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
 
   }
@@ -117,19 +88,19 @@ export class ReportService {
    * @param id - The ID of the report
    * @returns An object indicating success or failure and a message
    */
-  remove(id: string) {
+  async remove(id: string) {
     try {
-      this.reportRepository.delete(id);
+      const result = await this.reportRepository.delete(id);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Report with ID ${id} not found`);
+      }
       return {
         success: true,
         message: "Report deleted successfully"
       }
     }
     catch (error) {
-      return {
-        success: false,
-        message: error.message
-      }
+      throw new InternalServerErrorException(error.message);
     }
   }
 }
