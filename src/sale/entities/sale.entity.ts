@@ -2,7 +2,7 @@ import { Dispenser } from "src/dispenser/entities/dispenser.entity";
 import { Pump } from "src/station/entities/pump.entity";
 import { Station } from "src/station/entities/station.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, OneToOne } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, OneToOne, Index } from "typeorm";
 import { Product } from "../enum/product.enum";
 
 @Entity({ name: 'Sale' }) // Use plural, lowercase name convention
@@ -71,6 +71,7 @@ export class Sale {
    * Timestamp when the sale record was created (defaults to now).
    */
   @CreateDateColumn({ precision: 6 })
+  @Index()
   createdAt: Date;
 
   // --- Relationships ---
@@ -84,6 +85,7 @@ export class Sale {
    */
   @ManyToOne(() => Station, (station) => station.sales)
   @JoinColumn({ name: 'stationId' })
+  @Index()
   station: Station;
 
   /**
@@ -91,6 +93,7 @@ export class Sale {
    */
   @ManyToOne(() => Pump, (pump) => pump.sales)
   @JoinColumn({ name: 'pump_id' })
+  @Index()
   pump: Pump;
 
   @OneToOne((type) => Dispenser, dispenser => dispenser.sales)

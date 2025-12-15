@@ -14,6 +14,9 @@ import {
   ParseUUIDPipe,
   Req,
   UnauthorizedException,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { SaleService } from './sale.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
@@ -86,8 +89,11 @@ export class SaleController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only director and manager roles allowed.' })
   @Get()
-  findAll() {
-    return this.saleService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.saleService.findAll(page, limit);
   }
 
   @Roles(Role.director, Role.manager)

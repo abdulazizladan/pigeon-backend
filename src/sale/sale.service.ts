@@ -1,7 +1,7 @@
 // src/sale/sale.service.ts
 
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dispenser } from 'src/dispenser/entities/dispenser.entity';
@@ -24,7 +24,8 @@ export class SaleService {
     @InjectRepository(Station)
     private readonly stationRepository: Repository<Station>,
     @InjectRepository(PumpDailyRecord)
-    private readonly dailyRecordRepository: Repository<PumpDailyRecord>
+    private readonly dailyRecordRepository: Repository<PumpDailyRecord>,
+    private readonly dataSource: DataSource,
   ) { }
 
   // --- CRUD Methods (Refactored for cleaner data/error handling) ---
@@ -86,54 +87,52 @@ export class SaleService {
       recordedBy: user, // Link to the recording User
     });
 
-    const savedSale = await this.saleRepository.save(sale);
+    // Use a transaction to ensure both Sale and DailyRecord are updated or neither
+    return this.dataSource.transaction(async (manager) => {
+      const savedSale = await manager.save(sale);
 
-    // 4. Update Pump Daily Record
-    const today = new Date();
-    // Reset time to 00:00:00 for accurate daily grouping
-    today.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    let dailyRecord = await this.dailyRecordRepository.findOne({
-      where: {
-        pump: { id: pump.id },
-        recordDate: today,
-      },
-    });
-
-    if (!dailyRecord) {
-      dailyRecord = this.dailyRecordRepository.create({
-        pump: pump,
-        station: pump.station,
-        recordDate: today,
-        volumeSold: 0,
-        totalRevenue: 0,
+      let dailyRecord = await manager.findOne(PumpDailyRecord, {
+        where: {
+          pump: { id: pump.id },
+          recordDate: today,
+        },
       });
-    }
 
-    // Accumulate volume and revenue
-    // Ensure we are working with numbers
-    dailyRecord.volumeSold = Number(dailyRecord.volumeSold) + volumeLiters;
-    dailyRecord.totalRevenue = Number(dailyRecord.totalRevenue) + totalPrice;
+      if (!dailyRecord) {
+        dailyRecord = manager.create(PumpDailyRecord, {
+          pump: pump,
+          station: pump.station,
+          recordDate: today,
+          volumeSold: 0,
+          totalRevenue: 0,
+        });
+      }
 
-    await this.dailyRecordRepository.save(dailyRecord);
+      // Accumulate volume and revenue
+      dailyRecord.volumeSold = Number(dailyRecord.volumeSold) + volumeLiters;
+      dailyRecord.totalRevenue = Number(dailyRecord.totalRevenue) + totalPrice;
 
-    return savedSale;
+      await manager.save(dailyRecord);
+
+      return savedSale;
+    });
   }
 
   /**
    * Get all sales records.
    * @returns An array of all sale entities
    */
-  async findAll(): Promise<Sale[]> {
-    return this.saleRepository.find(
-      {
-        relations:
-          [
-            'pump',
-            'station'
-          ]
-      }
-    );
+  async findAll(page: number = 1, limit: number = 20): Promise<{ data: Sale[], total: number }> {
+    const [data, total] = await this.saleRepository.findAndCount({
+      relations: ['pump', 'station'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' }
+    });
+    return { data, total };
   }
 
   /**
@@ -241,7 +240,7 @@ export class SaleService {
     const result = await this.saleRepository
       .createQueryBuilder('sale')
       .select('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
-      .where('sale.station_id = :stationId', { stationId }) // Use foreign key column name
+      .where('sale.stationId = :stationId', { stationId }) // Use foreign key column name
       .getRawOne();
 
     return parseFloat(result.totalSale || 0);
@@ -254,7 +253,7 @@ export class SaleService {
   async getTotalSalesPerWeek(): Promise<any[]> {
     const rawSalesData = await this.saleRepository
       .createQueryBuilder('sale')
-      .select("STRFTIME('%W', sale.created_at)", 'week') // Use column name 'created_at'
+      .select("STRFTIME('%W', sale.createdAt)", 'week') // Use column name 'createdAt'
       .addSelect('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .groupBy('week')
       .orderBy('week', 'ASC')
@@ -273,7 +272,7 @@ export class SaleService {
   async getTotalSalesPerMonth(): Promise<any[]> {
     const rawSalesData = await this.saleRepository
       .createQueryBuilder('sale')
-      .select("STRFTIME('%Y-%m', sale.created_at)", 'month') // Use column name 'created_at'
+      .select("STRFTIME('%Y-%m', sale.createdAt)", 'month') // Use column name 'createdAt'
       .addSelect('SUM(sale.total_price)', 'totalSale') // Use column name 'total_price'
       .groupBy('month')
       .orderBy('month', 'ASC')
