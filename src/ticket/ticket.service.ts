@@ -12,12 +12,16 @@ import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class TicketService {
 
+
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
 
     @InjectRepository(Reply)
-    private readonly replyRepository: Repository<Reply>
+    private readonly replyRepository: Repository<Reply>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) { }
 
   /**
@@ -26,7 +30,15 @@ export class TicketService {
    * @returns The created ticket entity
    */
   async create(createTicketDto: CreateTicketDto) {
-    const ticket = this.ticketRepository.create(createTicketDto);
+    const user = await this.userRepository.findOne({ where: { email: createTicketDto.email } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${createTicketDto.email} not found`);
+    }
+
+    const ticket = this.ticketRepository.create({
+      ...createTicketDto,
+      sender: user
+    });
     return await this.ticketRepository.save(ticket);
   }
 
