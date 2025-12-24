@@ -37,25 +37,21 @@ export class SaleService {
  * @returns The created Sale entity.
  */
   async create(createSaleDto: CreateSaleDto, userId: string): Promise<Sale> {
-    // 1. Fetch related entities (Pump and User)
-    const pump = await this.pumpRepository.findOne({
-      // IMPORTANT: Using pumpId from DTO
-      where: {
-        id: createSaleDto.pumpId
-      },
-      relations: [
-        'station'
-      ], // Eagerly load the Station relation
-    });
+    // 1. Fetch related entities (Pump and User) in parallel for performance
+    const [pump, user] = await Promise.all([
+      this.pumpRepository.findOne({
+        where: { id: createSaleDto.pumpId },
+        relations: ['station'], // Eagerly load the Station relation
+      }),
+      this.userRepository.findOne({
+        where: { id: userId },
+      }),
+    ]);
 
     if (!pump) {
       throw new NotFoundException(`Pump with ID ${createSaleDto.pumpId} not found`);
     }
 
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    console.log(user)
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
@@ -67,19 +63,37 @@ export class SaleService {
       throw new BadRequestException('Closing meter reading must be greater than the opening meter reading.');
     }
 
+    // 🏆 OPTIMIZATION: Fetch Price from Station Source of Truth
+    // prevent frontend price manipulation.
+    let currentPrice = 0;
+    const station = pump.station;
+
+    // Check product type and get corresponding price from station
+    // We assume explicit specific prices take precedence, then generic station price, then DTO (fallback)
+    if (createSaleDto.product === 'PETROL' && station.petrolPricePerLitre > 0) {
+      currentPrice = station.petrolPricePerLitre;
+    } else if (createSaleDto.product === 'DIESEL' && station.dieselPricePerLitre > 0) {
+      currentPrice = station.dieselPricePerLitre;
+    } else if (station.pricePerLiter > 0) {
+      currentPrice = station.pricePerLiter;
+    } else {
+      // Fallback to DTO price if server-side prices are not configured (0)
+      currentPrice = createSaleDto.pricePerLitre;
+    }
+
     // Calculate total price and round to 4 decimal places for monetary consistency
-    const totalPrice = parseFloat((volumeLiters * createSaleDto.pricePerLitre).toFixed(4));
+    const totalPrice = parseFloat((volumeLiters * currentPrice).toFixed(4));
 
     // 3. Create and Save the Sale entity
     const sale = this.saleRepository.create({
       // Input fields from DTO
       product: createSaleDto.product,
-      pricePerLitre: createSaleDto.pricePerLitre,
+      pricePerLitre: currentPrice, // Use the trusted server-side price
       openingMeterReading: createSaleDto.openingMeterReading,
       closingMeterReading: createSaleDto.closingMeterReading,
 
       // Calculated fields
-      totalPrice: totalPrice, // CRITICAL: Now correctly assigning the calculated field
+      totalPrice: totalPrice,
 
       // Relationships
       pump: pump, // Link to the Pump
@@ -297,5 +311,50 @@ export class SaleService {
     }
 
     return query.getMany();
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily sales history for all stations.
+   * Useful for collective line graphs.
+   */
+  async getDailySalesHistory(days: number = 30): Promise<any[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Using query builder to aggregate sales by day
+    const history = await this.saleRepository.createQueryBuilder('sale')
+      .select("DATE(sale.createdAt)", 'date') // SQLite specific, check DB compatibility
+      .addSelect("SUM(sale.total_price)", 'totalSales')
+      .where("sale.createdAt >= :startDate", { startDate })
+      .groupBy("DATE(sale.createdAt)")
+      .orderBy("date", "ASC")
+      .getRawMany();
+
+    return history.map(record => ({
+      date: record.date,
+      totalSales: parseFloat(record.totalSales || 0),
+    }));
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily sales history for a specific station.
+   */
+  async getDailySalesHistoryByStation(stationId: string, days: number = 30): Promise<any[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const history = await this.saleRepository.createQueryBuilder('sale')
+      .select("DATE(sale.createdAt)", 'date')
+      .addSelect("SUM(sale.total_price)", 'totalSales')
+      .where("sale.stationId = :stationId", { stationId })
+      .andWhere("sale.createdAt >= :startDate", { startDate })
+      .groupBy("DATE(sale.createdAt)")
+      .orderBy("date", "ASC")
+      .getRawMany();
+
+    return history.map(record => ({
+      date: record.date,
+      totalSales: parseFloat(record.totalSales || 0),
+    }));
   }
 }

@@ -1,5 +1,6 @@
 export enum Status {
     active = "active",
     resolved = "resolved",
-    terminated = "terminated"
+    terminated = "terminated",
+    canceled = "canceled"
 }

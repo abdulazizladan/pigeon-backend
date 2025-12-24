@@ -88,15 +88,11 @@ export class DispenserService {
         }
       }
     )
-    try {
-      if (!dispenser) {
-        throw new NotFoundException(`Dispenser with ID ${id} not found`);
-      }
-      return dispenser;
-    } catch (error) {
-      // Return error message if fetching fails
-      throw new InternalServerErrorException(error.message);
+
+    if (!dispenser) {
+      throw new NotFoundException(`Dispenser with ID ${id} not found`);
     }
+    return dispenser;
   }
 
   /**
@@ -106,17 +102,12 @@ export class DispenserService {
    * @returns Success or error response with message
    */
   async update(id: string, updateDispenserDto: UpdateDispenserDto) {
-    try {
-      // Update dispenser with new data
-      const result = await this.dispenserRepository.update(id, updateDispenserDto);
-      if (result.affected === 0) {
-        throw new NotFoundException(`Dispenser with ID ${id} not found`);
-      }
-      return this.findOne(id);
-    } catch (error) {
-      // Return error message if update fails
-      throw new InternalServerErrorException(error.message);
+    // Update dispenser with new data
+    const result = await this.dispenserRepository.update(id, updateDispenserDto);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Dispenser with ID ${id} not found`);
     }
+    return this.findOne(id);
   }
 
   /**
@@ -125,19 +116,14 @@ export class DispenserService {
    * @returns Success or error response with message
    */
   async remove(id: string) {
-    try {
-      // Delete dispenser by ID
-      const result = await this.dispenserRepository.delete(id);
-      if (result.affected === 0) {
-        throw new NotFoundException(`Dispenser with ID ${id} not found`);
-      }
-      return {
-        success: true,
-        message: "Dispenser deleted successfully"
-      }
-    } catch (error) {
-      // Return error message if deletion fails
-      throw new InternalServerErrorException(error.message);
+    // Delete dispenser by ID
+    const result = await this.dispenserRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Dispenser with ID ${id} not found`);
+    }
+    return {
+      success: true,
+      message: "Dispenser deleted successfully"
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UseGuards, HttpCode, HttpStatus, Req, ForbiddenException } from '@nestjs/common';
 import { StationService } from './station.service';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
@@ -9,17 +9,31 @@ import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/user/enums/role.enum';
 import { RecordSalesDto } from './dto/record-sales.dto';
 
-interface ManagerIdDto { 
-  managerId: string; 
+interface ManagerIdDto {
+  managerId: string;
 }
 
 @ApiTags('Stations')
 @ApiBearerAuth()
 @Controller('station')
-//@UseGuards(AuthGuard('jwt'), RolesGuard)
+// @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class StationController {
-  
-  constructor(private readonly stationService: StationService) {}
+
+  constructor(private readonly stationService: StationService) { }
+
+  /**
+   * Get the station assigned to the logged-in manager.
+   * Accessible by manager only.
+   */
+  @Roles(Role.manager)
+  @ApiOperation({ summary: 'Get my station details (Manager)' })
+  @ApiOkResponse({ description: 'Station details retrieved.' })
+  @Get('mine')
+  async findMyStation(@Req() req: any) {
+    // In production, req.user will be populated by AuthGuard
+    const managerId = req.user?.id || '2960f22f-d123-4567-890a-123456789abc'; // Fallback
+    return this.stationService.findMyStation(managerId);
+  }
 
   /**
    * Get station stats.
@@ -36,6 +50,8 @@ export class StationController {
     return this.stationService.getSummary();
   }
 
+
+
   /**
    * Add new station.
    * Accessible by admin and director.
@@ -43,7 +59,7 @@ export class StationController {
    */
   @Roles(Role.admin, Role.director)
   @ApiOperation({ description: "Add new station with a dynamic list of pumps.", summary: "Add new station and its pumps" }) // 👈 Updated summary
-  @ApiCreatedResponse({ 
+  @ApiCreatedResponse({
     description: 'Station created successfully.',
     // ... Schema property definition remains valid, referencing the DTO
     schema: {
@@ -76,7 +92,7 @@ export class StationController {
           dieselVolume: 0,
           dieselPricePerLiter: 165.00,
           // Manager ID must be an existing User ID (UUID)
-          managerId: "f0e1d2c3-b4a5-6789-0123-456789abcdef", 
+          managerId: "f0e1d2c3-b4a5-6789-0123-456789abcdef",
           // The dynamic list of pumps is defined here:
           pumps: [
             { pumpNumber: 1, dispensedProduct: "PETROL" },
@@ -127,15 +143,25 @@ export class StationController {
   }
 
   /**
-   * Update a station by ID.
-   * Accessible by director only.
-   * @access director
-   * @param id - The ID of the station
-   * @param updateStationDto - DTO containing updated station data
+   * Get specific station summary (petrol/diesel levels, pump status, sales).
+   * Accessible by director and manager.
+   * @access director, manager
    */
-  @Roles(Role.director)
+  @Roles(Role.director, Role.manager, Role.admin)
+  @ApiOperation({ description: "Get specific station summary stats", summary: "Get One Station Summary" })
+  @ApiOkResponse({ description: 'Station summary retrieved successfully.' })
+  @Get(':id/summary')
+  getStationSummary(@Param('id') id: string) {
+    return this.stationService.getStationSummary(id);
+  }
+
+  /**
+   * Update a station by ID.
+   * Accessible by director and manager (for their own station).
+   */
+  @Roles(Role.director, Role.manager)
   @ApiOperation({ description: "Update station", summary: "Update station" })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Station updated successfully.',
     schema: {
       type: 'object',
@@ -148,31 +174,29 @@ export class StationController {
   })
   @ApiBadRequestResponse({ description: 'Invalid input data.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
-  @ApiForbiddenResponse({ description: 'Forbidden. Only director role allowed.' })
-  @ApiBody({
-    type: UpdateStationDto,
-    examples: {
-        updateCoreDetailsAndManager: {
-            summary: 'Update price, location, and reassign the station manager',
-            value: {
-                pricePerLiter: 168.00,
-                lga: "Ikeja",
-                status: "active",
-                // Reassign manager to an existing User ID (UUID)
-                managerId: "12345678-abcd-ef01-2345-67890abcdef0",
-            } as UpdateStationDto,
-        },
-        unassignManager: {
-            summary: 'Unassign the current manager and update the address',
-            value: {
-                address: "New Address Road 789",
-                managerId: null, // Set managerId to null/empty string to unassign the manager
-            } as UpdateStationDto,
-        }
-    }
-  })
+  @ApiForbiddenResponse({ description: 'Forbidden. Role not allowed.' })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto) {
+  async update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto, @Req() req: any) {
+    const user = req.user; // Populated by JWT Guard
+
+    // Security Check for Managers
+    if (user && user.role === Role.manager) {
+      // Optimistic check: We assume findMyStation throws if not found/not assigned
+      // In a real scenario, we might want to catch that error to return 403 instead of 404, 
+      // but 404 is also acceptable if they have NO station.
+      // However, if they have a station but it's different, we check IDs.
+      try {
+        const myStation = await this.stationService.findMyStation(user.id);
+        if (myStation.id !== id) {
+          throw new ForbiddenException("You can only update your own station.");
+        }
+      } catch (e) {
+        if (e instanceof ForbiddenException) throw e;
+        // If we can't find their station, they definitely can't update *this* one
+        throw new ForbiddenException("Access denied to this station.");
+      }
+    }
+
     return this.stationService.update(id, updateStationDto);
   }
 
@@ -184,7 +208,7 @@ export class StationController {
    */
   @Roles(Role.director)
   @ApiOperation({ description: "Delete station", summary: "Delete station by ID" })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Station deleted successfully.',
     schema: {
       type: 'object',
@@ -257,13 +281,13 @@ export class StationController {
    */
   //@Roles(Role.manager)
   @ApiOperation({ description: "Record daily sales for a specific pump (upsert)", summary: "Record/Update Daily Pump Sales" })
-  @ApiCreatedResponse({ 
+  @ApiCreatedResponse({
     description: 'Daily sales recorded successfully (created or updated).',
     schema: {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        data: { type: 'object' /* PumpDailyRecord entity */ }, 
+        data: { type: 'object' /* PumpDailyRecord entity */ },
         message: { type: 'string', example: 'Daily sales recorded successfully' }
       }
     }
@@ -299,13 +323,13 @@ export class StationController {
    */
   //@Roles(Role.director)
   @ApiOperation({ description: "Get daily sales grouped by Station and Day", summary: "Daily Sales Report" })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Aggregated daily sales report retrieved successfully.',
     schema: {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        data: { 
+        data: {
           type: 'array',
           items: {
             type: 'object',

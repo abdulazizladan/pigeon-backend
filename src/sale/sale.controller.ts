@@ -231,6 +231,54 @@ export class SaleController {
     return this.saleService.getDailySalesByStation(stationId);
   }
 
+  /**
+   * 📈 Retrieves the last 30 days of daily sales history for all stations.
+   * Accessible by director and manager.
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ summary: 'Get 30-day sales history (Collective)', description: 'Retrieves daily total sales for the last 30 days across all stations.' })
+  @ApiOkResponse({
+    description: '30-day sales history retrieved.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', format: 'date', example: '2024-11-01' },
+          totalSales: { type: 'number', example: 154000.50 }
+        }
+      }
+    }
+  })
+  @Get('report/daily/history')
+  async getDailySalesHistory() {
+    return this.saleService.getDailySalesHistory(30);
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily sales history for a specific station.
+   * Accessible by director and manager.
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ summary: 'Get 30-day sales history by Station', description: 'Retrieves daily total sales for the last 30 days for a specific station.' })
+  @ApiOkResponse({
+    description: 'Station 30-day sales history retrieved.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', format: 'date', example: '2024-11-01' },
+          totalSales: { type: 'number', example: 54000.00 }
+        }
+      }
+    }
+  })
+  @Get('report/daily/station/:stationId/history')
+  async getDailySalesHistoryByStation(@Param('stationId', ParseUUIDPipe) stationId: string) {
+    return this.saleService.getDailySalesHistoryByStation(stationId, 30);
+  }
+
   @ApiOperation({ summary: 'Get sales record by station' })
   @Get('/station/:id')
   getSalesByStation(@Param('id') id: string) {

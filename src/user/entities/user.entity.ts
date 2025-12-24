@@ -12,7 +12,7 @@ import { Reply } from "src/ticket/entities/reply.entity";
 import { IsEmail, IsEnum, IsString, IsOptional, IsDate, IsArray, IsNumber } from "class-validator";
 import { Sale } from "src/sale/entities/sale.entity";
 
-@Entity({name: "User"})
+@Entity({ name: "User" })
 export class User {
     /**
      * Unique identifier for the user (Primary Key)
@@ -20,11 +20,11 @@ export class User {
     @PrimaryGeneratedColumn('uuid')
     @IsString()
     id: string;
-     
+
     /**
      * Unique email address of the user
      */
-    @Column({unique: true})
+    @Column({ unique: true })
     @IsEmail()
     email: string;
 
@@ -32,37 +32,37 @@ export class User {
      * Hashed password for the user (excluded from serialization)
      */
     @Exclude()
-    @Column({default: "password"})
+    @Column({ default: "password" })
     @IsString()
     password: string;
 
     /**
      * Role of the user (admin, director, manager)
      */
-    @Column({ default: Role.manager})
+    @Column({ default: Role.manager })
     @IsEnum(Role)
     role: Role;
 
     /**
      * Status of the user (active, inactive, etc.)
      */
-    @Column({default: Status.active})
+    @Column({ default: Status.active })
     @IsEnum(Status)
     status: Status;
 
     /**
      * Date when the user was created
      */
-    @CreateDateColumn({precision: 6})
+    @CreateDateColumn({ precision: 6 })
     @IsDate()
     createdAt: Date;
 
     /**
      * One-to-one relation to Info entity (user's personal info)
      */
-    @OneToOne((type) => Info, info => info.user) 
+    @OneToOne((type) => Info, info => info.user)
     @IsOptional()
-    info: Info; 
+    info: Info;
 
     /**
      * One-to-one relation to Contact entity (user's contact info)
@@ -74,7 +74,7 @@ export class User {
     /**
      * One-to-one relation to Station entity (if user is a manager)
      */
-    @OneToOne((type) => Station, station => station.manager, {nullable: true, cascade: true})
+    @OneToOne((type) => Station, station => station.manager, { nullable: true, cascade: true })
     @IsOptional()
     station: Station;
 
@@ -87,15 +87,17 @@ export class User {
     tickets: Ticket[];
 
     /**
-     * Ticket reply (not persisted, used for serialization)
+     * One-to-many relation to Reply entity (replies sent by user)
      */
+    @OneToMany((type) => Reply, reply => reply.sender)
+    @IsArray()
     @IsOptional()
-    ticketReply: Reply;
+    replies: Reply[];
 
     /**
      * One-to-many relation to MonthlyReport entity (reports created by user)
      */
-    @OneToMany((type) => MonthlyReport, report => report.createdBy, {nullable: true, cascade: true, onDelete: 'CASCADE', onUpdate: 'CASCADE'})
+    @OneToMany((type) => MonthlyReport, report => report.createdBy, { nullable: true, cascade: true, onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     @IsArray()
     @IsOptional()
     reports: MonthlyReport[];

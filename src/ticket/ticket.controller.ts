@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, ClassSerializerInterceptor, Request } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
@@ -14,7 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 @Controller('ticket')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class TicketController {
-  constructor(private readonly ticketService: TicketService) {}
+  constructor(private readonly ticketService: TicketService) { }
 
   /**
    * Create a new ticket.
@@ -22,7 +22,7 @@ export class TicketController {
    * @access director, manager
    */
   @Roles(Role.director, Role.manager)
-  @ApiOperation({summary: "Create ticket"})
+  @ApiOperation({ summary: "Create ticket" })
   @ApiOkResponse({ description: 'Ticket created successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only director and manager roles allowed.' })
@@ -37,7 +37,7 @@ export class TicketController {
    * @access admin
    */
   @Roles(Role.admin)
-  @ApiOperation({summary: "Get tickets stats"})
+  @ApiOperation({ summary: "Get tickets stats" })
   @ApiOkResponse({ description: 'Ticket stats retrieved successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin role allowed.' })
@@ -52,15 +52,16 @@ export class TicketController {
    * @access admin, director, manager
    */
   @Roles(Role.admin, Role.director, Role.manager)
-  @ApiOperation({summary: "Add reply to ticket"})
+  @ApiOperation({ summary: "Add reply to ticket" })
   @ApiOkResponse({ description: 'Reply added successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin, director, and manager roles allowed.' })
   @Post(':ticketID/reply')
   async addReply(@Param('ticketID') ticketID: string,
-  @Body() createReplyDto: CreateReplyDto) {
+    @Body() createReplyDto: CreateReplyDto,
+    @Request() req) {
     try {
-      const reply = await this.ticketService.addReply(ticketID, createReplyDto);
+      const reply = await this.ticketService.addReply(ticketID, createReplyDto, req.user);
       return {
         success: true,
         data: reply,
@@ -79,7 +80,7 @@ export class TicketController {
    * Accessible by admin only.
    * @access admin
    */
-  @ApiOperation({summary: "Get all tickets"})
+  @ApiOperation({ summary: "Get all tickets" })
   @ApiOkResponse({ description: 'All tickets retrieved successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin role allowed.' })
@@ -96,11 +97,11 @@ export class TicketController {
    * @param email - The email to search tickets for
    */
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiOperation({summary: "Get ticket by email"})
+  @ApiOperation({ summary: "Get ticket by email" })
   @ApiOkResponse({ description: 'Tickets retrieved successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only director and manager roles allowed.' })
-  @Roles( Role.director, Role.manager)
+  @Roles(Role.director, Role.manager)
   @Get('email/:email')
   findByEmail(@Param('email') email: string) {
     return this.ticketService.findByEmail(email);
@@ -113,7 +114,7 @@ export class TicketController {
    * @param id - The ID of the ticket
    */
   @UseInterceptors(ClassSerializerInterceptor)
-  @ApiOperation({summary: "Get ticket by ID"})
+  @ApiOperation({ summary: "Get ticket by ID" })
   @ApiOkResponse({ description: 'Ticket retrieved successfully.' })
   @ApiNotFoundResponse({ description: 'Ticket not found.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
@@ -131,7 +132,7 @@ export class TicketController {
    * @param id - The ID of the ticket
    * @param updateTicketDto - DTO containing updated ticket data
    */
-  @ApiOperation({summary: "Update"})
+  @ApiOperation({ summary: "Update" })
   @ApiOkResponse({ description: 'Ticket updated successfully.' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin role allowed.' })
@@ -147,8 +148,8 @@ export class TicketController {
    * @access admin
    * @param id - The ID of the ticket
    */
-  @ApiOperation({summary: "Remove ticket"})
-  @ApiOkResponse({ 
+  @ApiOperation({ summary: "Remove ticket" })
+  @ApiOkResponse({
     description: 'Ticket deleted successfully.',
     schema: {
       type: 'object',

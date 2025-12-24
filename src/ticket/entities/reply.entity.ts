@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Ticket } from "./ticket.entity";
 import { User } from "src/user/entities/user.entity";
+import { Status } from "../enum/status.enum";
 
 @Entity({ name: "Reply" })
 export class Reply {
@@ -14,10 +15,18 @@ export class Reply {
   @Column({ nullable: false })
   message: string;
 
-  //@Column({nullable: true})
-  //sender: User;
+  @ManyToOne(() => User, user => user.replies, { eager: true })
+  @JoinColumn({ name: 'sender_id' })
+  sender: User;
 
-  @CreateDateColumn({ precision: 6})
+  @Column({
+    type: 'simple-enum',
+    enum: Status,
+    default: Status.active
+  })
+  status: Status;
+
+  @CreateDateColumn({ precision: 6 })
   date: Date;
 
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './entities/ticket.entity';
@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Reply } from './entities/reply.entity';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { Status } from './enum/status.enum';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class TicketService {
@@ -50,19 +51,26 @@ export class TicketService {
    * Adds a reply to a specific ticket.
    * @param ticketID - The ID of the ticket to reply to
    * @param replyData - DTO containing reply details
+   * @param user - The user creating the reply
    * @returns The created reply entity
    * @throws NotFoundException if the ticket does not exist
    */
-  async addReply(ticketID: string, replyData: CreateReplyDto) {
+  async addReply(ticketID: string, replyData: CreateReplyDto, user: User) {
     const ticket = await this.ticketRepository.findOne({
       where: { id: ticketID },
       relations: ['replies'], // Load existing replies to update the array
     });
     if (!ticket) throw new NotFoundException('Ticket not found');
 
+    // Prevent replying to resolved tickets
+    if (ticket.status === Status.resolved) {
+      throw new BadRequestException('Cannot reply to a resolved ticket');
+    }
+
     const reply = this.replyRepository.create({
       ...replyData,
       ticket, // Set the ticket relation
+      sender: user,
     });
 
     await this.replyRepository.save(reply); // Save the reply

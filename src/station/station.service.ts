@@ -10,6 +10,9 @@ import { PumpDailyRecord } from './entities/pum-daily-record.entity';
 import { RecordSalesDto } from './dto/record-sales.dto';
 import { Role } from 'src/user/enums/role.enum';
 
+import { Sale } from 'src/sale/entities/sale.entity';
+import { Between } from 'typeorm';
+
 @Injectable()
 export class StationService {
 
@@ -22,6 +25,8 @@ export class StationService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(PumpDailyRecord)
     private readonly dailyRecordRepository: Repository<PumpDailyRecord>,
+    @InjectRepository(Sale)
+    private readonly saleRepository: Repository<Sale>,
   ) { }
 
   /**
@@ -119,6 +124,24 @@ export class StationService {
    * @param id - The ID of the station
    * @returns The station object.
    */
+  /**
+   * Finds the station assigned to a specific manager.
+   * @param managerId - The ID of the manager
+   * @returns The station entity
+   */
+  async findMyStation(managerId: string) {
+    const station = await this.stationRepository.findOne({
+      where: { manager: { id: managerId } },
+      relations: ['pumps', 'manager', 'dispensers', 'sales', 'stock']
+    });
+
+    if (!station) {
+      throw new NotFoundException(`No station assigned to manager ${managerId}`);
+    }
+
+    return station;
+  }
+
   async findOne(id: string) {
     try {
       const station = await this.stationRepository.findOne(
@@ -173,42 +196,21 @@ export class StationService {
           if (!foundManager) {
             throw new NotFoundException(`Manager with ID ${managerId} not found.`);
           }
+          // Verify if the user is actually a manager role if needed
+          // if (foundManager.role !== Role.manager) { ... }
           managerToAssign = foundManager;
         }
       }
 
       // 3. Merge Station Details and Manager
-      // Note: We ignore the 'pumps' field from the DTO for updates, as complex nested array updates 
-      // (like adding/deleting pumps) are usually handled via dedicated endpoints/service methods.
-      // We use the TypeORM save pattern to merge and update the database record.
 
-      // Fix type incompatibility: ensure status is typed as partial/"active"|"inactive" if present
-      const mergedDetails = { ...stationDetails };
-
-      if (mergedDetails.status !== undefined) {
-        // Coerce status to correct enum (if needed)
-        mergedDetails.status = mergedDetails.status as any;
-      }
-
-      // Fix type incompatibility for 'status': convert to correct enum if necessary
-      if (mergedDetails.status !== undefined) {
-        // Assuming the enum is 'active' | 'inactive'
-        if (
-          mergedDetails.status !== 'active' &&
-          mergedDetails.status !== 'inactive'
-        ) {
-          // Default or error (optional), but TypeORM will complain if not correct value
-          mergedDetails.status = undefined;
-        }
-      }
-
-      // Merge updated fields into existingStation (type-safe for DeepPartial<Station>)
-      this.stationRepository.merge(existingStation, mergedDetails as any); // 'as any' if cast required to satisfy DeepPartial, else use proper StationPartial type
+      // We can directly merge stationDetails if UpdateStationDto aligns with Station entity.
+      // Explicitly typing helps avoid 'as any'
+      this.stationRepository.merge(existingStation, stationDetails as Partial<Station>);
 
       if (managerToAssign !== undefined) {
         existingStation.manager = managerToAssign;
       }
-
 
       // 4. Save the merged entity to execute the update
       const updatedStation = await this.stationRepository.save(existingStation);
@@ -216,6 +218,8 @@ export class StationService {
       return updatedStation;
 
     } catch (error) {
+      // Re-throw known HTTP exceptions to avoid wrapping them in 500
+      if (error instanceof NotFoundException) throw error;
       console.error('Error updating station:', error);
       throw new InternalServerErrorException(error.message);
     }
@@ -390,6 +394,82 @@ export class StationService {
       data: results,
       message: 'Aggregated daily sales by station retrieved successfully',
     };
+  }
+
+  async getStationSummary(stationId: string) {
+    try {
+      // 1. Fetch Station with Pumps and Volume Info
+      const station = await this.stationRepository.findOne({
+        where: { id: stationId },
+        relations: ['pumps'], // We need to count pumps
+      });
+
+      if (!station) {
+        throw new NotFoundException(`Station with ID ${stationId} not found`);
+      }
+
+      // 2. Calculate Pump Ratio
+      // Since Pump entity currently lacks a 'status' field, we assume all pumps are working.
+      // If a status field is added later, update this logic (e.g., filter by status === 'active').
+      const totalPumps = station.pumps ? station.pumps.length : 0;
+      const workingPumps = totalPumps; // Placeholder assumption
+      const nonWorkingPumps = 0; // Placeholder assumption
+
+      // 3. Calculate Yesterday's Sales
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
+      const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
+
+      const yesterdaySalesResult = await this.saleRepository
+        .createQueryBuilder('sale')
+        .select('SUM(sale.totalPrice)', 'total')
+        .where('sale.stationId = :stationId', { stationId })
+        .andWhere('sale.createdAt BETWEEN :start AND :end', { start: startOfYesterday, end: endOfYesterday })
+        .getRawOne();
+
+      const yesterdaySales = yesterdaySalesResult && yesterdaySalesResult.total ? parseFloat(yesterdaySalesResult.total) : 0;
+
+      // 4. Calculate Cumulative Sales for Past 30 Days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const salesHistory = await this.saleRepository
+        .createQueryBuilder('sale')
+        .select('DATE(sale.createdAt)', 'date')
+        .addSelect('SUM(sale.totalPrice)', 'dailyTotal')
+        .where('sale.stationId = :stationId', { stationId })
+        .andWhere('sale.createdAt >= :startDate', { startDate: thirtyDaysAgo })
+        .groupBy('DATE(sale.createdAt)')
+        .orderBy('date', 'ASC')
+        .getRawMany();
+
+      return {
+        stationId: station.id,
+        fuelLevels: {
+          petrol: station.petrolVolume,
+          diesel: station.dieselVolume,
+        },
+        pumpStatus: {
+          working: workingPumps,
+          nonWorking: nonWorkingPumps,
+          ratio: `${workingPumps}:${nonWorkingPumps}`,
+        },
+        sales: {
+          yesterday: yesterdaySales,
+          history: salesHistory.map(record => ({
+            date: record.date,
+            total: parseFloat(record.dailyTotal),
+          })),
+        }
+      };
+
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
 }
