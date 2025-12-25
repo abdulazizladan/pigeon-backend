@@ -7,7 +7,7 @@ import { Pump } from "./pump.entity";
 import { PumpDailyRecord } from "./pum-daily-record.entity";
 import { Stock } from "./stock.entity";
 
-@Entity({name: "Station"})
+@Entity({ name: "Station" })
 export class Station {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -47,8 +47,8 @@ export class Station {
     @IsNumber()
     latitude: number;
 
-    @JoinColumn({name: "user_id", referencedColumnName: "id"})
-    @OneToOne((type) => User, (user: User) => user.station, {nullable: true})
+    @JoinColumn({ name: "user_id", referencedColumnName: "id" })
+    @OneToOne((type) => User, (user: User) => user.station, { nullable: true })
     @IsOptional()
     manager: User;
 
@@ -67,10 +67,10 @@ export class Station {
     @IsOptional()
     dispensers: Dispenser[];
 
-    @Column({default: "active"})
+    @Column({ default: "active" })
     // Status of the station (active or inactive)
-    @IsEnum(["active", "inactive"])
-    status: "active" | "inactive";
+    @IsEnum(["active", "suspended"])
+    status: "active" | "suspended";
 
     @OneToMany(() => Pump, (pump) => pump.station)
     pumps: Pump[];
@@ -81,16 +81,16 @@ export class Station {
     @CreateDateColumn({ precision: 6 })
     createdAt: Date;
 
-    @Column({default: 0})
+    @Column({ default: 0 })
     petrolVolume: number;
 
-    @Column({default: 0})
+    @Column({ default: 0 })
     petrolPricePerLitre: number;
 
-    @Column({default: 0})
+    @Column({ default: 0 })
     dieselVolume: number;
 
-    @Column({default: 0})
+    @Column({ default: 0 })
     dieselPricePerLitre: number;
 
     @OneToMany((type) => Stock, stock => stock.station)

@@ -82,12 +82,12 @@ export class StationService {
   async getSummary() {
     const totalStations = await this.stationRepository.count();
     const activeStations = await this.stationRepository.count({ where: { status: 'active' } });
-    const inactiveStations = await this.stationRepository.count({ where: { status: 'inactive' } });
+    const suspendedStations = await this.stationRepository.count({ where: { status: 'suspended' } });
 
     return {
       total: totalStations,
       active: activeStations,
-      inactive: inactiveStations,
+      suspended: suspendedStations,
     }
   }
 
@@ -221,6 +221,28 @@ export class StationService {
       // Re-throw known HTTP exceptions to avoid wrapping them in 500
       if (error instanceof NotFoundException) throw error;
       console.error('Error updating station:', error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  /**
+   * Updates only the status of a station.
+   * @param id - The ID of the station
+   * @param status - The new status ('active' | 'suspended')
+   * @returns The updated station.
+   */
+  async updateStatus(id: string, status: 'active' | 'suspended') {
+    try {
+      const station = await this.stationRepository.findOne({ where: { id } });
+
+      if (!station) {
+        throw new NotFoundException(`Station with ID ${id} not found`);
+      }
+
+      station.status = status;
+      return await this.stationRepository.save(station);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(error.message);
     }
   }
@@ -393,6 +415,77 @@ export class StationService {
       success: true,
       data: results,
       message: 'Aggregated daily sales by station retrieved successfully',
+    };
+  }
+
+  /**
+   * Retrieves sales graph data for a station for the past 30 days.
+   * Returns separate arrays for Petrol and Diesel sales.
+   * @param stationId - The ID of the station
+   */
+  async getSalesGraph(stationId: string) {
+    // 1. Calculate Date Range (Past 30 Days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // 2. Query Sales Grouped by Date and Product
+    const salesData = await this.saleRepository
+      .createQueryBuilder('sale')
+      .select('DATE(sale.createdAt)', 'date')
+      .addSelect('sale.product', 'product')
+      .addSelect('SUM(sale.totalPrice)', 'dailyTotal')
+      .where('sale.stationId = :stationId', { stationId })
+      .andWhere('sale.createdAt >= :startDate', { startDate: thirtyDaysAgo })
+      .groupBy('DATE(sale.createdAt)')
+      .addGroupBy('sale.product')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    // 3. Process Data into Graph Format
+    // Initialize map with all dates in the range to ensure continuous graph
+    const labels: string[] = [];
+    const petrolData: number[] = [];
+    const dieselData: number[] = [];
+
+    // Create a map for quick lookup:  "YYYY-MM-DD" -> { PETROL: 0, DIESEL: 0 }
+    const dateMap = new Map<string, { PETROL: number; DIESEL: number }>();
+
+    // Fill the map with the last 30 days (default 0)
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      labels.push(dateStr);
+      dateMap.set(dateStr, { PETROL: 0, DIESEL: 0 });
+    }
+
+    // Populate with actual data
+    salesData.forEach(record => {
+      // record.date might be a Date object or string depending on driver, ensure string YYYY-MM-DD
+      const dateStr = typeof record.date === 'string' ? record.date.substring(0, 10) : record.date.toISOString().substring(0, 10);
+
+      if (dateMap.has(dateStr)) {
+        const entry = dateMap.get(dateStr);
+        const amount = parseFloat(record.dailyTotal);
+        if (record.product === 'PETROL') entry.PETROL += amount;
+        else if (record.product === 'DIESEL') entry.DIESEL += amount;
+      }
+    });
+
+    // Build the final arrays
+    labels.forEach(date => {
+      const entry = dateMap.get(date);
+      petrolData.push(entry.PETROL);
+      dieselData.push(entry.DIESEL);
+    });
+
+    return {
+      labels,
+      datasets: [
+        { label: 'Petrol Sales', data: petrolData, borderColor: '#4CAF50', backgroundColor: '#4CAF50' }, // Example colors
+        { label: 'Diesel Sales', data: dieselData, borderColor: '#FFC107', backgroundColor: '#FFC107' }
+      ]
     };
   }
 

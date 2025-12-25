@@ -10,6 +10,7 @@ import { TicketModule } from './ticket/ticket.module';
 import { ChatGateway } from './chat.gateway';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupplyModule } from './supply/supply.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SupplyModule } from './supply/supply.module';
     ReportModule,
     TicketModule,
     SupplyModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [

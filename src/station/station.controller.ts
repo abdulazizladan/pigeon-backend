@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Cla
 import { StationService } from './station.service';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
+import { UpdateStationStatusDto } from './dto/update-station-status.dto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiUnauthorizedResponse, ApiForbiddenResponse, ApiOkResponse, ApiNotFoundResponse, ApiBody, ApiCreatedResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -156,6 +157,20 @@ export class StationController {
   }
 
   /**
+   * Get sales graph data for a specific station (past 30 days).
+   * Separated by Petrol and Diesel.
+   * Accessible by director and manager.
+   * @access director, manager
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ description: "Get sales graph data (last 30 days)", summary: "Get Sales Graph" })
+  @ApiOkResponse({ description: 'Sales graph data retrieved successfully.' })
+  @Get(':id/sales-graph')
+  getSalesGraph(@Param('id') id: string) {
+    return this.stationService.getSalesGraph(id);
+  }
+
+  /**
    * Update a station by ID.
    * Accessible by director and manager (for their own station).
    */
@@ -198,6 +213,47 @@ export class StationController {
     }
 
     return this.stationService.update(id, updateStationDto);
+  }
+
+  /**
+   * Update station status.
+   * Accessible by director and manager.
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ description: "Update station status", summary: "Update station status" })
+  @ApiOkResponse({
+    description: 'Station status updated successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { $ref: '#/components/schemas/Station' }, // Ensuring Station schema is ref-able, usually is if entity is used in other responses
+        message: { type: 'string', example: 'Station status updated successfully' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data.' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
+  @ApiForbiddenResponse({ description: 'Forbidden. Role not allowed.' })
+  @ApiBody({ type: UpdateStationStatusDto })
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Body() updateStationStatusDto: UpdateStationStatusDto, @Req() req: any) {
+    const user = req.user; // Populated by JWT Guard
+
+    // Security Check for Managers
+    if (user && user.role === Role.manager) {
+      try {
+        const myStation = await this.stationService.findMyStation(user.id);
+        if (myStation.id !== id) {
+          throw new ForbiddenException("You can only update your own station.");
+        }
+      } catch (e) {
+        if (e instanceof ForbiddenException) throw e;
+        throw new ForbiddenException("Access denied to this station.");
+      }
+    }
+
+    return this.stationService.updateStatus(id, updateStationStatusDto.status);
   }
 
   /**

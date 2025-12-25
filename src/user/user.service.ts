@@ -162,7 +162,8 @@ export class UserService {
         },
         relations: [
           'info',
-          'contact'
+          'contact',
+          'station', // Added station to relations
         ],
         select: [
           'id',
@@ -170,7 +171,8 @@ export class UserService {
           'contact',
           'info',
           'role',
-          'status'
+          'status',
+          'station', // Added station to select
         ]
       })
       return managers;

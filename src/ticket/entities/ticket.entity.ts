@@ -23,7 +23,7 @@ export class Ticket {
   @OneToMany(() => Reply, reply => reply.ticket)
   replies: Reply[];
 
-  @ManyToOne((type) => User, user => user.tickets, {nullable: true})
-  @JoinColumn({name: "user_id", referencedColumnName: "id"})
+  @ManyToOne((type) => User, user => user.tickets, { nullable: true })
+  @JoinColumn({ name: "user_id", referencedColumnName: "id" })
   sender: User;
-}
+}  
