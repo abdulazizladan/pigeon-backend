@@ -64,4 +64,9 @@ export class SupplyController {
   getStationTrends(@Param('stationId', ParseUUIDPipe) stationId: string) {
     return this.supplyService.getRefuelTrends(stationId, 30);
   }
+
+  @Get('last-restock/:stationId')
+  getLastRestock(@Param('stationId') stationId: string) {
+    return this.supplyService.getLastRestock(stationId);
+  }
 }

@@ -357,4 +357,40 @@ export class SaleService {
       totalSales: parseFloat(record.totalSales || 0),
     }));
   }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily CUMULATIVE sales history for all stations.
+   */
+  async getDailyCumulativeSalesHistory(days: number = 30): Promise<any[]> {
+    // 1. Get standard daily sales
+    const dailySales = await this.getDailySalesHistory(days);
+
+    // 2. Process into cumulative
+    let runningTotal = 0;
+    return dailySales.map(record => {
+      runningTotal += record.totalSales;
+      return {
+        date: record.date,
+        cumulativeSales: runningTotal
+      };
+    });
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily CUMULATIVE sales history for a specific station.
+   */
+  async getDailyCumulativeSalesHistoryByStation(stationId: string, days: number = 30): Promise<any[]> {
+    // 1. Get standard daily sales for station
+    const dailySales = await this.getDailySalesHistoryByStation(stationId, days);
+
+    // 2. Process into cumulative
+    let runningTotal = 0;
+    return dailySales.map(record => {
+      runningTotal += record.totalSales;
+      return {
+        date: record.date,
+        cumulativeSales: runningTotal
+      };
+    });
+  }
 }

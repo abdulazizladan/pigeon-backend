@@ -47,6 +47,12 @@ export class Supply {
     })
     status: SupplyStatus;
 
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    currentPetrolLevel: number;
+
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    currentDieselLevel: number;
+
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'approvedById' })
     approvedBy: User;

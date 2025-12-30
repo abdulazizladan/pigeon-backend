@@ -33,8 +33,10 @@ export class SupplyService {
     try {
       const supply = this.supplyRepository.create({
         ...createSupplyDto,
-        requestedBy: { id: userId } as any, // Temporary casting if relation setup varies
-        station: { id: createSupplyDto.stationId } as any
+        requestedBy: { id: userId } as any,
+        station: { id: createSupplyDto.stationId } as any,
+        currentPetrolLevel: createSupplyDto.currentPetrolLevel,
+        currentDieselLevel: createSupplyDto.currentDieselLevel,
       });
       return await this.supplyRepository.save(supply);
     } catch (error) {
@@ -127,4 +129,31 @@ export class SupplyService {
       totalQuantity: parseFloat(r.totalQuantity)
     }));
   }
+
+
+  async getLastRestock(stationId: string) {
+    const lastPetrol = await this.supplyRepository.findOne({
+      where: {
+        stationId,
+        product: ProductType.PETROL,
+        status: SupplyStatus.DELIVERED
+      },
+      order: { deliveryDate: 'DESC' }
+    });
+
+    const lastDiesel = await this.supplyRepository.findOne({
+      where: {
+        stationId,
+        product: ProductType.DIESEL,
+        status: SupplyStatus.DELIVERED
+      },
+      order: { deliveryDate: 'DESC' }
+    });
+
+    return {
+      petrol: lastPetrol ? { quantity: lastPetrol.quantity, date: lastPetrol.deliveryDate } : null,
+      diesel: lastDiesel ? { quantity: lastDiesel.quantity, date: lastDiesel.deliveryDate } : null,
+    };
+  }
 }
+

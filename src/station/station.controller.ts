@@ -17,7 +17,7 @@ interface ManagerIdDto {
 @ApiTags('Stations')
 @ApiBearerAuth()
 @Controller('station')
-// @UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class StationController {
 
   constructor(private readonly stationService: StationService) { }
@@ -31,8 +31,8 @@ export class StationController {
   @ApiOkResponse({ description: 'Station details retrieved.' })
   @Get('mine')
   async findMyStation(@Req() req: any) {
-    // In production, req.user will be populated by AuthGuard
-    const managerId = req.user?.id || '2960f22f-d123-4567-890a-123456789abc'; // Fallback
+    // req.user is populated by AuthGuard with the JWT payload
+    const managerId = req.user.id;
     return this.stationService.findMyStation(managerId);
   }
 

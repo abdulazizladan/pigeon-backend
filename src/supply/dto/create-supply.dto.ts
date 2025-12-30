@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsUUID, Min, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductType } from '../entities/supply.entity';
 
@@ -14,5 +14,17 @@ export class CreateSupplyDto {
     @ApiProperty({ example: 5000, description: 'Quantity in liters' })
     @IsNumber()
     @Min(1)
+    @IsNumber()
+    @Min(1)
     quantity: number;
+
+    @ApiProperty({ example: 2500, description: 'Current petrol level in liters', required: false })
+    @IsNumber()
+    @IsOptional()
+    currentPetrolLevel?: number;
+
+    @ApiProperty({ example: 3000, description: 'Current diesel level in liters', required: false })
+    @IsNumber()
+    @IsOptional()
+    currentDieselLevel?: number;
 }

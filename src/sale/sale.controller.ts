@@ -274,9 +274,54 @@ export class SaleController {
       }
     }
   })
-  @Get('report/daily/station/:stationId/history')
   async getDailySalesHistoryByStation(@Param('stationId', ParseUUIDPipe) stationId: string) {
     return this.saleService.getDailySalesHistoryByStation(stationId, 30);
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily CUMULATIVE sales history for all stations.
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ summary: 'Get 30-day CUMULATIVE sales history (Collective)', description: 'Retrieves daily running total of sales for the last 30 days across all stations.' })
+  @ApiOkResponse({
+    description: '30-day cumulative sales history retrieved.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', format: 'date', example: '2024-11-01' },
+          cumulativeSales: { type: 'number', example: 154000.50 }
+        }
+      }
+    }
+  })
+  @Get('report/daily/cumulative')
+  async getDailyCumulativeSalesHistory() {
+    return this.saleService.getDailyCumulativeSalesHistory(30);
+  }
+
+  /**
+   * 📈 Retrieves the last 30 days of daily CUMULATIVE sales history for a specific station.
+   */
+  @Roles(Role.director, Role.manager)
+  @ApiOperation({ summary: 'Get 30-day CUMULATIVE sales history by Station', description: 'Retrieves daily running total of sales for the last 30 days for a specific station.' })
+  @ApiOkResponse({
+    description: 'Station 30-day cumulative sales history retrieved.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', format: 'date', example: '2024-11-01' },
+          cumulativeSales: { type: 'number', example: 54000.00 }
+        }
+      }
+    }
+  })
+  @Get('report/daily/station/:stationId/cumulative')
+  async getDailyCumulativeSalesHistoryByStation(@Param('stationId', ParseUUIDPipe) stationId: string) {
+    return this.saleService.getDailyCumulativeSalesHistoryByStation(stationId, 30);
   }
 
   @ApiOperation({ summary: 'Get sales record by station' })
