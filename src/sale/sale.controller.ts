@@ -329,4 +329,10 @@ export class SaleController {
   getSalesByStation(@Param('id') id: string) {
     return this.saleService.findAllByStationID(id);
   }
+
+  @ApiOperation({ summary: 'Seed sales data (DEV ONLY)' })
+  @Post('seed')
+  seedSales() {
+    return this.saleService.seedSales();
+  }
 }

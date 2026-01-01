@@ -2,7 +2,7 @@ import { PrimaryGeneratedColumn, Column, Entity, JoinColumn, OneToOne, UpdateDat
 import { User } from "./user.entity";
 import { IsString, IsOptional, IsNumber } from "class-validator";
 
-@Entity({name: "Info"})
+@Entity({ name: "Info" })
 export class Info {
     /**
      * Unique identifier for the info record (Primary Key)
@@ -10,7 +10,7 @@ export class Info {
     @PrimaryGeneratedColumn('uuid')
     @IsString()
     id: string;
-    
+
     /**
      * First name of the user
      */
@@ -28,7 +28,7 @@ export class Info {
     /**
      * URL or path to the user's profile image (optional)
      */
-    @Column({nullable: true})
+    @Column({ nullable: true })
     @IsOptional()
     @IsString()
     image: string;
@@ -36,8 +36,8 @@ export class Info {
     /**
      * The user associated with this info record
      */
-    @JoinColumn({name: 'user_email', referencedColumnName: "email"})
-    @OneToOne((type) => User, user => user.info, { cascade: true, onDelete: 'CASCADE'})
+    @JoinColumn({ name: 'user_email', referencedColumnName: "email" })
+    @OneToOne((type) => User, user => user.info, { onDelete: 'CASCADE' })
     user: User;
 
     @UpdateDateColumn()

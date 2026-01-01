@@ -206,4 +206,114 @@ export class AnalyticsService {
             throw new InternalServerErrorException(error.message);
         }
     }
+
+    /**
+     * Retrieves aggregated sales statistics for the dashboard.
+     * - Total sales (revenue) for the current month.
+     * - Total volume sold today (overall).
+     * - Total Petrol volume sold today.
+     * - Total Diesel volume sold today.
+     */
+    async getDailyStats() {
+        const today = new Date();
+
+        // Current Month Range
+        const startOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        // Today Range
+        const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+        const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+        try {
+            // 1. Total Sales for This Month
+            const monthSalesResult = await this.saleRepository
+                .createQueryBuilder('sale')
+                .select('SUM(sale.totalPrice)', 'total')
+                .where('sale.createdAt BETWEEN :start AND :end', { start: startOfCurrentMonth, end: endOfCurrentMonth })
+                .getRawOne();
+
+            const totalSalesThisMonth = monthSalesResult && monthSalesResult.total ? parseFloat(monthSalesResult.total) : 0;
+
+            // 2. Today's Volumes
+            const todayVolumeResult = await this.saleRepository
+                .createQueryBuilder('sale')
+                .select('sale.product', 'product')
+                .addSelect('SUM(sale.closingMeterReading - sale.openingMeterReading)', 'volume')
+                .where('sale.createdAt BETWEEN :start AND :end', { start: startOfToday, end: endOfToday })
+                .groupBy('sale.product')
+                .getRawMany();
+
+            let totalVolumeSoldToday = 0;
+            let totalPetrolVolumeSoldToday = 0;
+            let totalDieselVolumeSoldToday = 0;
+
+            todayVolumeResult.forEach(row => {
+                const vol = parseFloat(row.volume);
+                totalVolumeSoldToday += vol;
+                if (row.product === 'PETROL') totalPetrolVolumeSoldToday += vol;
+                else if (row.product === 'DIESEL') totalDieselVolumeSoldToday += vol;
+            });
+
+            return {
+                totalSalesThisMonth,
+                totalVolumeSoldToday,
+                totalPetrolVolumeSoldToday,
+                totalDieselVolumeSoldToday
+            };
+
+        } catch (error) {
+            throw new InternalServerErrorException(error.message);
+        }
+    }
+
+    /**
+     * Retrieves daily sales trend for each station for the last 30 days.
+     */
+    async getDailySalesByStation() {
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        try {
+            const results = await this.saleRepository
+                .createQueryBuilder('sale')
+                .innerJoin('sale.station', 'station')
+                .select('station.name', 'stationName')
+                .addSelect('DATE(sale.createdAt)', 'date')
+                .addSelect('SUM(sale.totalPrice)', 'totalSales')
+                .where('sale.createdAt >= :startDate', { startDate: thirtyDaysAgo })
+                .groupBy('station.name')
+                .addGroupBy('DATE(sale.createdAt)')
+                .orderBy('station.name', 'ASC')
+                .addOrderBy('date', 'ASC')
+                .getRawMany();
+
+            // Transform data into nested structure
+            const stationMap = new Map<string, any>();
+
+            results.forEach(record => {
+                const stationName = record.stationName;
+                const date = typeof record.date === 'string' ? record.date : record.date.toISOString().substring(0, 10);
+                const totalSales = parseFloat(record.totalSales);
+
+                if (!stationMap.has(stationName)) {
+                    stationMap.set(stationName, {
+                        stationName,
+                        dailySales: []
+                    });
+                }
+
+                stationMap.get(stationName).dailySales.push({
+                    date,
+                    totalSales
+                });
+            });
+
+            return Array.from(stationMap.values());
+
+        } catch (error) {
+            throw new InternalServerErrorException(error.message);
+        }
+    }
 }

@@ -11,6 +11,12 @@ import { ChatGateway } from './chat.gateway';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SupplyModule } from './supply/supply.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ActivityLogModule } from './activity-log/activity-log.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ActivityLogInterceptor } from './activity-log/activity-log.interceptor';
+
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -40,10 +46,16 @@ import { AnalyticsModule } from './analytics/analytics.module';
     TicketModule,
     SupplyModule,
     AnalyticsModule,
+    ActivityLogModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
-    ChatGateway
+    AppService,
+    ChatGateway,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
+    },
   ],
 })
 export class AppModule { }

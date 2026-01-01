@@ -14,7 +14,6 @@ import { Public } from './public.decorator';
 @ApiTags('Authentication')
 @ApiBearerAuth()
 @Controller('auth')
-@Controller('auth')
 export class AuthController {
 
     constructor(
@@ -32,13 +31,34 @@ export class AuthController {
     })
     @ApiOkResponse({
         description: 'Login successful',
-        // ... (rest of ApiOkResponse)
     })
     @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
     @ApiBadRequestResponse({ description: 'Invalid input data' })
     @ApiBody({
         type: LoginDto,
-        // ... (rest of ApiBody)
+        examples: {
+            director: {
+                summary: 'Director/Admin',
+                value: {
+                    email: 'abdulazizladan@gmail.com',
+                    password: 'password'
+                }
+            },
+            manager1: {
+                summary: 'Manager 1',
+                value: {
+                    email: 'useelikoro@gmail.com',
+                    password: 'password'
+                }
+            },
+            manager2: {
+                summary: 'Manager 2',
+                value: {
+                    email: 'manager2@gmail.com',
+                    password: 'password'
+                }
+            }
+        }
     })
     @Post("login")
     login(@Body() user: LoginDto) {

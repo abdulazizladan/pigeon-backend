@@ -52,11 +52,6 @@ export class Station {
     @IsOptional()
     manager: User;
 
-    @Column({})
-    // Price per liter at the station
-    @IsNumber()
-    pricePerLiter: number;
-
     @OneToMany((type) => Sale, sale => sale.station)
     // Sales associated with the station
     @IsOptional()

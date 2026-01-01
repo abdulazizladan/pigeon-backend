@@ -74,8 +74,8 @@ export class SaleService {
       currentPrice = station.petrolPricePerLitre;
     } else if (createSaleDto.product === 'DIESEL' && station.dieselPricePerLitre > 0) {
       currentPrice = station.dieselPricePerLitre;
-    } else if (station.pricePerLiter > 0) {
-      currentPrice = station.pricePerLiter;
+    } else if (station.petrolPricePerLitre > 0) {
+      currentPrice = station.petrolPricePerLitre;
     } else {
       // Fallback to DTO price if server-side prices are not configured (0)
       currentPrice = createSaleDto.pricePerLitre;
@@ -392,5 +392,93 @@ export class SaleService {
         cumulativeSales: runningTotal
       };
     });
+  }
+
+  /**
+   * SEEDING: Generates random sales data for the last 10 days.
+   */
+  async seedSales() {
+    const stations = await this.stationRepository.find({
+      relations: ['pumps', 'dispensers', 'manager', 'pumps.station']
+    });
+
+    const products = ['PETROL', 'DIESEL'];
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+
+      // Randomly scatter times throughout the workday (8am - 8pm)
+      // We will generate a base date and then offset hours/minutes for each sale
+
+      for (const station of stations) {
+        // Randomly decide if this station had sales today
+        if (Math.random() > 0.9) continue; // 10% chance of no sales
+
+        const numSales = Math.floor(Math.random() * 10) + 5; // 5-15 sales
+
+        for (let j = 0; j < numSales; j++) {
+          if (!station.pumps || station.pumps.length === 0) continue;
+
+          const pump = station.pumps[Math.floor(Math.random() * station.pumps.length)];
+          // Note: The Pump entity definition seemed to suggest 'dispensedProduct' exists,
+          // but if not, we fallback to logic. Checked Pump entity: it has `dispensedProduct`.
+
+          const rawProduct = pump.dispensedProduct ? pump.dispensedProduct.toString() : 'PETROL';
+          // Ensure product matches available Enums or Strings expected by Sale.
+          // Assuming Sale 'product' is string for now based on entity.
+
+          // Random Dispenser (Staff)
+          const dispenser = (station.dispensers && station.dispensers.length > 0)
+            ? station.dispensers[Math.floor(Math.random() * station.dispensers.length)]
+            : null;
+
+          // Random User (Recorder - fallback to Manager or create a placeholder)
+          // For seeding, we might just use the station manager if available, OR find a random user.
+          // To avoid complexity, let's use the station manager if exists, else first user in DB?
+          // Or just null if nullable? Sale.recordedBy is ManyToOne.
+          // Let's assume manager.
+          const user = station.manager;
+
+          if (!user) {
+            // Skip if no user to record (constraint) or fetch a default admin
+            continue;
+          }
+
+          const price = rawProduct.toUpperCase() === 'DIESEL' ?
+            (station.dieselPricePerLitre || 1100) :
+            (station.petrolPricePerLitre || 950);
+
+          const volume = parseFloat((Math.random() * 50 + 5).toFixed(2)); // 5-55 liters
+          const totalPrice = parseFloat((volume * price).toFixed(2));
+
+          const openingMeter = 10000 + (j * 100);
+          const closingMeter = openingMeter + volume;
+
+          // Create Sale directly to allow overriding 'createdAt'
+          const sale = this.saleRepository.create({
+            product: rawProduct,
+            pricePerLitre: price,
+            openingMeterReading: openingMeter,
+            closingMeterReading: closingMeter,
+            totalPrice: totalPrice,
+            pump: pump,
+            station: station,
+            recordedBy: user,
+            dispenser: dispenser,
+            createdAt: date // Override default default
+          });
+
+          // Adjust time of day
+          const hours = 8 + Math.floor(Math.random() * 12); // 08:00 - 20:00
+          const minutes = Math.floor(Math.random() * 60);
+          sale.createdAt.setHours(hours, minutes, 0, 0);
+
+          await this.saleRepository.save(sale);
+        }
+      }
+    }
+
+    return { message: 'Seeding complete for the last 10 days.' };
   }
 }

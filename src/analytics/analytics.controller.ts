@@ -43,4 +43,20 @@ export class AnalyticsController {
     getStationsPerformanceYesterday() {
         return this.analyticsService.getStationsPerformanceYesterday();
     }
+
+    @Get('sales/stats')
+    //@Roles(Role.director, Role.admin)
+    @ApiOperation({ summary: 'Get Daily Sales Statistics' })
+    @ApiOkResponse({ description: 'Returns total sales for this month, and total volumes sold today (overall, petrol, diesel).' })
+    getDailyStats() {
+        return this.analyticsService.getDailyStats();
+    }
+
+    @Get('sales/station-daily-trend')
+    //@Roles(Role.director, Role.admin)
+    @ApiOperation({ summary: 'Get Daily Sales by Station (Last 30 Days)' })
+    @ApiOkResponse({ description: 'Returns list of stations with their daily sales history for the last 30 days.' })
+    getDailySalesByStation() {
+        return this.analyticsService.getDailySalesByStation();
+    }
 }

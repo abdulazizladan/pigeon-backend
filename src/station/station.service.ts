@@ -55,12 +55,14 @@ export class StationService {
 
       // 4. Handle Pump Creation (if provided) <-- This handles the dynamic array of pumps
       if (pumps && pumps.length > 0) {
-        const pumpEntities = pumps.map(pumpDto =>
-          this.pumpRepository.create({
-            ...pumpDto,
+        const pumpEntities = pumps.map(pumpDto => {
+          const { pumpNumber, dispensedProduct } = pumpDto;
+          return this.pumpRepository.create({
+            pumpNumber,
+            dispensedProduct,
             station: newStation, // Assign the newly created station entity
-          })
-        );
+          });
+        });
         // Use insert for bulk creation performance
         await this.pumpRepository.insert(pumpEntities);
 

@@ -5,7 +5,7 @@ import { IsString, IsNumber } from "class-validator";
 /**
  * Contact entity representing user's contact information.
  */
-@Entity({name: "Contact"})
+@Entity({ name: "Contact" })
 export class Contact {
     /**
      * Unique identifier for the contact (Primary Key)
@@ -24,8 +24,8 @@ export class Contact {
     /**
      * Associated user for this contact (One-to-One relationship)
      */
-    @JoinColumn({name: "user_email", referencedColumnName: "email"})
-    @OneToOne((type) => User, user => user.contact, {cascade: true, onDelete: 'CASCADE'})
+    @JoinColumn({ name: "user_email", referencedColumnName: "email" })
+    @OneToOne((type) => User, user => user.contact, { onDelete: 'CASCADE' })
     user: User;
 
     @UpdateDateColumn()

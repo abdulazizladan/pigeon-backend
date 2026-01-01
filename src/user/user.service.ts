@@ -32,8 +32,9 @@ export class UserService {
       const user = this.userRepository.create({
         ...createUserDto,
         password: hashedPassword,
-        contact: await this.contactRepository.save(createUserDto.contact),
-        info: await this.infoRepository.save(createUserDto.info)
+        // Relations will be saved via cascade
+        contact: createUserDto.contact,
+        info: createUserDto.info
       });
       return await this.userRepository.save(user);
     } catch (error) {
@@ -137,7 +138,8 @@ export class UserService {
   async findByEmail(email: string): Promise<any> {
     try {
       const user = await this.userRepository.findOne({
-        where: { email }
+        where: { email },
+        relations: ['info']
       })
       if (user) {
         return {

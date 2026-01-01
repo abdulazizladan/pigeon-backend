@@ -60,14 +60,14 @@ export class User {
     /**
      * One-to-one relation to Info entity (user's personal info)
      */
-    @OneToOne((type) => Info, info => info.user)
+    @OneToOne((type) => Info, info => info.user, { cascade: true })
     @IsOptional()
     info: Info;
 
     /**
      * One-to-one relation to Contact entity (user's contact info)
      */
-    @OneToOne((type) => Contact, contact => contact.user)
+    @OneToOne((type) => Contact, contact => contact.user, { cascade: true })
     @IsOptional()
     contact: Contact;
 

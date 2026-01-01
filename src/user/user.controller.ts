@@ -12,7 +12,7 @@ import { Roles } from 'src/auth/roles.decorator';
 @ApiBearerAuth()
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   /**
    * Create a new user.
@@ -38,7 +38,7 @@ export class UserController {
             firstName: 'Jane',
             lastName: 'Doe',
             image: 'https://example.com/avatar.jpg'
-          }, 
+          },
           contact: {
             phone: '+15551234567'
           }
@@ -57,10 +57,10 @@ export class UserController {
    * @access all
    */
   //@Roles(Role.admin, Role.director)
-  @ApiOkResponse({description: "User stats found"})
+  @ApiOkResponse({ description: "User stats found" })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
   @ApiForbiddenResponse({ description: 'Forbidden. Only admin and director roles allowed.' })
-  @ApiOperation({summary: "Get user stats by role and status"})
+  @ApiOperation({ summary: "Get user stats by role and status" })
   @Get('stats')
   getStats() {
     return this.userService.getStats();
@@ -90,7 +90,7 @@ export class UserController {
   @ApiOkResponse({ description: 'Managers fetched successfully' })
   @ApiNoContentResponse({ description: 'No managers found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
-  @ApiOperation({ summary: 'Find all managers'})
+  @ApiOperation({ summary: 'Find all managers' })
   @Get('managers')
   findManagers() {
     return this.userService.findManagers()
@@ -99,7 +99,7 @@ export class UserController {
   @ApiOkResponse({ description: 'Manager fetched successfully' })
   @ApiNoContentResponse({ description: 'No manager found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized. JWT is missing or invalid.' })
-  @ApiOperation({ summary: 'Find manager by ID'})
+  @ApiOperation({ summary: 'Find manager by ID' })
   @Get('manager/:id')
   findManagerByID(@Param('id') id: string) {
     return this.userService.findManagerByID(id)
@@ -123,7 +123,7 @@ export class UserController {
     return this.userService.findOne(email);
   }
 
-  
+
   /**
    * Update a user by email.
    * Accessible by admin only.

@@ -10,6 +10,32 @@ Base URL: `http://localhost:3000` (or your deployed URL)
 | `POST` | `/auth/login` | Login user | Public | `{ email, password }` |
 | `PATCH` | `/auth/change-password` | Change authenticated user's password | Admin, Director, Manager | `{ oldPassword, newPassword }` |
 
+### Login Body Examples
+
+**Example 1 - Director/Admin Account:**
+```json
+{
+  "email": "abdulazizladan@gmail.com",
+  "password": "password"
+}
+```
+
+**Example 2 - Manager Account:**
+```json
+{
+  "email": "useelikoro@gmail.com",
+  "password": "password"
+}
+```
+
+**Example 3 - Manager Account:**
+```json
+{
+  "email": "manager2@gmail.com",
+  "password": "password"
+}
+```
+
 ## Station Management (`/station`)
 
 | Method | Endpoint | Description | Roles | Body/Params |
