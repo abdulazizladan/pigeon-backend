@@ -10,6 +10,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { StationsModule } from './stations/stations.module';
 import { SalesModule } from './sales/sales.module';
 import { ManagersModule } from './managers/managers.module';
+import { ActivitiesModule } from './activities/activities.module';
 import { ProductsModule } from './products/products.module';
 import { PumpsModule } from './pumps/pumps.module';
 import { ReservoirsModule } from './reservoirs/reservoirs.module';
@@ -26,6 +27,7 @@ import { ReservoirsModule } from './reservoirs/reservoirs.module';
       autoLoadEntities: true,
       synchronize: true, // Only for development
     }),
+    ActivitiesModule,
     AuthModule,
     UsersModule,
     TicketsModule,

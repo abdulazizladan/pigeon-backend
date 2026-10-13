@@ -9,6 +9,7 @@ import { StationQueryDto } from './dto/station-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtPayload } from '../auth/auth.service';
+import { LogActivity } from '../activities/activity.decorator';
 
 type Req = { user: JwtPayload };
 
@@ -55,6 +56,13 @@ export class SalesController {
   }
 
   @Post('daily')
+  @LogActivity({
+    action: 'daily_record.created',
+    describe: ({ result }) =>
+      `Recorded daily sales for ${result.recordedOn}: ₦${result.totals.actualAmount} actual vs ₦${result.totals.expectedAmount} expected`,
+    target: ({ result }) => ({ type: 'daily_record', id: result.id, label: result.recordedOn }),
+    metadata: ({ result }) => ({ stationId: result.stationId, ...result.totals }),
+  })
   @ApiOperation({
     summary: 'Record a trading day: opening/closing meter for every active pump and dip levels for every reservoir',
     description: 'Managers record their own station. Prices in force at submission time are snapshotted onto the readings.',
@@ -67,6 +75,13 @@ export class SalesController {
   }
 
   @Put('daily/:id')
+  @LogActivity({
+    action: 'daily_record.updated',
+    describe: ({ result }) =>
+      `Updated daily sales for ${result.recordedOn}: ₦${result.totals.actualAmount} actual vs ₦${result.totals.expectedAmount} expected`,
+    target: ({ result }) => ({ type: 'daily_record', id: result.id, label: result.recordedOn }),
+    metadata: ({ result }) => ({ stationId: result.stationId, ...result.totals }),
+  })
   @ApiOperation({ summary: 'Replace every reading on an existing daily record' })
   @ApiResponse({ status: 404, description: 'Record not found' })
   update(@Param('id') id: string, @Body() dto: UpdateDailyRecordDto, @Request() req: Req) {

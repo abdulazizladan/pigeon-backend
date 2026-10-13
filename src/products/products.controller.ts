@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../users/enums/role.enum';
 import { JwtPayload } from '../auth/auth.service';
+import { LogActivity } from '../activities/activity.decorator';
 
 @ApiTags('Products & Prices')
 @ApiBearerAuth('JWT-auth')
@@ -31,6 +32,12 @@ export class ProductsController {
 
   @Put('stations/:stationId/prices/:product')
   @Roles(Role.ADMIN, Role.DIRECTOR)
+  @LogActivity({
+    action: 'price.set',
+    describe: ({ result }) => `Set ${PRODUCT_LABELS[result.product as Product] ?? result.product} price to ₦${result.pricePerLitre}/L`,
+    target: ({ params }) => ({ type: 'station', id: params.stationId ?? null, label: null }),
+    metadata: ({ result }) => ({ product: result.product, pricePerLitre: result.pricePerLitre }),
+  })
   @ApiOperation({ summary: 'Set the ₦/litre of a product at a station. Admin and Director only.' })
   @ApiParam({ name: 'product', enum: PRODUCTS })
   @ApiResponse({ status: 404, description: 'Station not found' })

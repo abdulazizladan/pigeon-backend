@@ -6,6 +6,7 @@ import { Role } from './enums/role.enum';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { LogActivity } from '../activities/activity.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
@@ -38,6 +39,11 @@ export class UsersController {
 
   @Post()
   @Roles(Role.ADMIN, Role.DIRECTOR)
+  @LogActivity({
+    action: 'user.created',
+    describe: ({ result }) => `Created ${result.role} account @${result.username}`,
+    target: ({ result }) => ({ type: 'user', id: result.id, label: result.username }),
+  })
   @ApiOperation({
     summary: 'Create a new user',
     description: 'Admin can create admins, directors, and managers. Director can only create managers.',

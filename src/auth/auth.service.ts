@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { UserStatus } from '../users/enums/user-status.enum';
+import { ActivitiesService } from '../activities/activities.service';
 
 /**
  * Hash compared against when the username does not exist, so an unknown
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private activitiesService: ActivitiesService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<{ access_token: string }> {
@@ -45,8 +47,8 @@ export class AuthService {
       role: user.role,
     };
 
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+    const access_token = await this.jwtService.signAsync(payload);
+    void this.activitiesService.log({ actor: payload, action: 'auth.login', description: 'Signed in' });
+    return { access_token };
   }
 }

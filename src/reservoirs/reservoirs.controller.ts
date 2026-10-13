@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../users/enums/role.enum';
+import { LogActivity } from '../activities/activity.decorator';
 
 @ApiTags('Reservoirs')
 @ApiBearerAuth('JWT-auth')
@@ -24,6 +25,11 @@ export class ReservoirsController {
 
   @Post('stations/:stationId/reservoirs')
   @Roles(Role.ADMIN, Role.DIRECTOR)
+  @LogActivity({
+    action: 'reservoir.created',
+    describe: ({ result }) => `Added a ${result.product} reservoir of ${result.capacityLitres} L`,
+    target: ({ result }) => ({ type: 'station', id: result.stationId, label: null }),
+  })
   @ApiOperation({ summary: 'Add a reservoir for a product the station does not have a tank for yet. Admin and Director only.' })
   @ApiResponse({ status: 409, description: 'Station already has a reservoir for that product' })
   create(@Param('stationId') stationId: string, @Body() dto: CreateReservoirDto) {
@@ -39,6 +45,11 @@ export class ReservoirsController {
 
   @Patch('reservoirs/:id')
   @Roles(Role.ADMIN, Role.DIRECTOR)
+  @LogActivity({
+    action: 'reservoir.updated',
+    describe: ({ result }) => `Set the ${result.product} reservoir capacity to ${result.capacityLitres} L`,
+    target: ({ result }) => ({ type: 'station', id: result.stationId, label: null }),
+  })
   @ApiOperation({ summary: 'Change a reservoir capacity. Admin and Director only.' })
   update(@Param('id') id: string, @Body() dto: UpdateReservoirDto) {
     return this.reservoirsService.update(id, dto);
