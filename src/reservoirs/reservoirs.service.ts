@@ -6,6 +6,7 @@ import { CreateReservoirDto } from './dto/create-reservoir.dto';
 import { UpdateReservoirDto } from './dto/update-reservoir.dto';
 import { Product, PRODUCTS } from '../products/product.enum';
 import { StationsService } from '../stations/stations.service';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 /** Tank sizes seeded for every station in development. */
 const SEED_CAPACITY: Record<Product, number> = {
@@ -23,7 +24,7 @@ export class ReservoirsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
     if ((await this.reservoirsRepository.count()) > 0) return;
 
     const stations = await this.stationsService.findAll();

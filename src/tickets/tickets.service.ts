@@ -7,6 +7,7 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { UsersService } from '../users/users.service';
 import { JwtPayload } from '../auth/auth.service';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 export interface TicketStats {
   total: number;
@@ -24,7 +25,7 @@ export class TicketsService implements OnModuleInit {
 
   /** Seeds a few sample tickets in non-production environments so the UI has data. */
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
     if ((await this.ticketsRepository.count()) > 0) return;
 
     const manager = await this.usersService.findOneByUsername('manager');

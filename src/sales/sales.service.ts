@@ -27,6 +27,7 @@ import { Product } from '../products/product.enum';
 import { Role } from '../users/enums/role.enum';
 import { JwtPayload } from '../auth/auth.service';
 import { addDays, eachDay, formatLocalDate, seededRandom } from '../common/date.util';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 export interface SalesPoint {
   date: string;
@@ -415,7 +416,7 @@ export class SalesService implements OnModuleInit {
 
   /** Seeds ~90 days of deterministic daily records per station in non-production when the table is empty. */
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
     if ((await this.recordsRepository.count()) > 0) return;
 
     const stations = await this.stationsService.findAll();

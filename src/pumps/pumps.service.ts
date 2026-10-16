@@ -7,6 +7,7 @@ import { CreatePumpDto } from './dto/create-pump.dto';
 import { UpdatePumpDto } from './dto/update-pump.dto';
 import { Product } from '../products/product.enum';
 import { StationsService } from '../stations/stations.service';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 /** Default layout seeded for every station in development: two petrol pumps, one diesel, one kerosene. */
 const SEED_PUMPS: { name: string; product: Product }[] = [
@@ -25,7 +26,7 @@ export class PumpsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
     if ((await this.pumpsRepository.count()) > 0) return;
 
     const stations = await this.stationsService.findAll();

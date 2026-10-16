@@ -14,6 +14,7 @@ import { UpdateStationDto } from './dto/update-station.dto';
 import { UsersService } from '../users/users.service';
 import { Role } from '../users/enums/role.enum';
 import { UserStatus } from '../users/enums/user-status.enum';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 export interface StationStats {
   total: number;
@@ -48,7 +49,7 @@ export class StationsService implements OnModuleInit {
 
   /** Seeds sample stations in non-production, and backfills address fields on earlier seed rows. */
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
 
     const existing = await this.stationsRepository.find();
     if (existing.length === 0) {

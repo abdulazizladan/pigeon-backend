@@ -5,6 +5,7 @@ import { StationProductPrice } from './entities/station-product-price.entity';
 import { Product, PRODUCTS } from './product.enum';
 import { StationsService } from '../stations/stations.service';
 import { JwtPayload } from '../auth/auth.service';
+import { shouldSeedDemoData } from '../common/seed.util';
 
 /** Default ₦/litre used to seed stations in development. */
 const SEED_PRICES: Record<Product, number> = {
@@ -23,7 +24,7 @@ export class ProductsService implements OnModuleInit {
 
   /** Gives every station a price for every product in non-production so the sales form works out of the box. */
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!shouldSeedDemoData()) return;
     if ((await this.pricesRepository.count()) > 0) return;
 
     const stations = await this.stationsService.findAll();

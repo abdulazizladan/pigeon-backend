@@ -26,7 +26,7 @@ npm run start:dev
 
 The API listens on `http://localhost:3000`. Interactive Swagger docs are at `http://localhost:3000/api/docs`, where you can log in and try every endpoint with the **Authorize** button.
 
-On first start the app creates `pigeon.sqlite` in the working directory and seeds it with sample users, stations, pumps, reservoirs, prices and 90 days of daily sales. Delete the file to start over with a fresh seed.
+On first start the app creates `pigeon.sqlite` in the working directory and seeds the three login accounts listed below. Nothing else is seeded by default, so you can enter stations, equipment and sales yourself. To get a full demo data set instead (six stations with pumps, tanks, prices, 90 days of daily sales and a few tickets), start once with `SEED_DEMO_DATA=true`. Delete the file to start over.
 
 Other scripts:
 
@@ -49,7 +49,8 @@ Settings come from environment variables, read from a `.env` file in this folder
 | `JWT_SECRET` | dev fallback | **Required** when `NODE_ENV=production`; the app refuses to start without it |
 | `JWT_EXPIRATION` | `1h` | Token lifetime, any `jsonwebtoken` duration string |
 | `SEED_PASSWORD` | `password` | Password given to the seeded accounts |
-| `NODE_ENV` | unset | Set to `production` to disable all seeding |
+| `SEED_DEMO_DATA` | unset | Set to `true` to seed demo stations, equipment, sales and tickets when their tables are empty |
+| `NODE_ENV` | unset | Set to `production` to disable all seeding, including the login accounts |
 
 The database is a SQLite file named `pigeon.sqlite` in the working directory, with TypeORM `synchronize` on. That is convenient for development but means schema changes are applied automatically and destructively. Switch to migrations before pointing this at real data.
 
@@ -171,7 +172,7 @@ src/
 └── config/        JWT config
 ```
 
-Each feature folder follows the same shape: `entities/`, `dto/`, a `*.service.ts`, a `*.controller.ts` and a `*.module.ts`. Services that seed data implement `OnModuleInit`; Nest initialises imported modules first, so seeding order follows the module import graph (users, then stations, then equipment and prices, then sales).
+Each feature folder follows the same shape: `entities/`, `dto/`, a `*.service.ts`, a `*.controller.ts` and a `*.module.ts`. Services that seed data implement `OnModuleInit` and check `shouldSeedDemoData()` from `src/common/seed.util.ts`; Nest initialises imported modules first, so seeding order follows the module import graph (users, then stations, then equipment and prices, then sales).
 
 ## Development notes
 
