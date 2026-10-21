@@ -34,6 +34,10 @@ export class ReservoirsService implements OnModuleInit {
     if (rows.length) await this.reservoirsRepository.save(this.reservoirsRepository.create(rows));
   }
 
+  findAll(): Promise<Reservoir[]> {
+    return this.reservoirsRepository.find({ order: { stationId: 'ASC', product: 'ASC' } });
+  }
+
   async findByStation(stationId: string): Promise<Reservoir[]> {
     await this.stationsService.findOne(stationId); // 404 if unknown
     return this.reservoirsRepository.find({ where: { stationId }, order: { product: 'ASC' } });

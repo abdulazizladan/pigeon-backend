@@ -5,8 +5,6 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../users/enums/role.enum';
 import { JwtPayload } from '../auth/auth.service';
 import { LogActivity } from '../activities/activity.decorator';
 
@@ -18,23 +16,24 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all support tickets, newest first' })
+  @ApiOperation({ summary: 'List tickets, newest first. Admins see all; others see only tickets they raised.' })
   @ApiResponse({ status: 200, description: 'List of tickets' })
-  findAll() {
-    return this.ticketsService.findAll();
+  findAll(@Request() req: { user: JwtPayload }) {
+    return this.ticketsService.findAll(req.user);
   }
 
   @Get('stats')
-  @ApiOperation({ summary: 'Ticket counts by status and priority' })
-  getStats() {
-    return this.ticketsService.getStats();
+  @ApiOperation({ summary: 'Ticket counts by status and priority (scoped like the list)' })
+  getStats(@Request() req: { user: JwtPayload }) {
+    return this.ticketsService.getStats(req.user);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a ticket by id' })
+  @ApiOperation({ summary: 'Get a ticket by id (owners and admins)' })
+  @ApiResponse({ status: 403, description: 'Not your ticket' })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
-  findOne(@Param('id') id: string) {
-    return this.ticketsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: { user: JwtPayload }) {
+    return this.ticketsService.findOne(id, req.user);
   }
 
   @Post()
@@ -51,11 +50,11 @@ export class TicketsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.DIRECTOR)
   @LogActivity({
     action: 'ticket.updated',
     describe: ({ result, body }) => {
       const parts: string[] = [];
+      if (body.title !== undefined || body.description !== undefined) parts.push(`edited ticket "${result.title}"`);
       if (body.status !== undefined) parts.push(`moved ticket "${result.title}" to ${String(body.status).replace('_', ' ')}`);
       if (body.priority !== undefined) parts.push(`set its priority to ${body.priority}`);
       if ('assignedToId' in body) parts.push(result.assignedToUsername ? `assigned it to @${result.assignedToUsername}` : 'unassigned it');
@@ -65,10 +64,13 @@ export class TicketsController {
     target: ({ result }) => ({ type: 'ticket', id: result.id, label: result.title }),
     metadata: ({ body }) => body,
   })
-  @ApiOperation({ summary: 'Update status, priority or assignee. Admin and Director only.' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiOperation({
+    summary: 'Update a ticket',
+    description: 'Admins may change anything. The person who raised the ticket may edit title, description and priority, close it, or reopen a closed one.',
+  })
+  @ApiResponse({ status: 403, description: 'Not your ticket, or a change only support may make' })
   @ApiResponse({ status: 404, description: 'Ticket or assignee not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateTicketDto) {
-    return this.ticketsService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateTicketDto, @Request() req: { user: JwtPayload }) {
+    return this.ticketsService.update(id, dto, req.user);
   }
 }

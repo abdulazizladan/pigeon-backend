@@ -11,6 +11,7 @@ import { StationsModule } from './stations/stations.module';
 import { SalesModule } from './sales/sales.module';
 import { ManagersModule } from './managers/managers.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ProductsModule } from './products/products.module';
 import { PumpsModule } from './pumps/pumps.module';
 import { ReservoirsModule } from './reservoirs/reservoirs.module';
@@ -37,6 +38,7 @@ import { ReservoirsModule } from './reservoirs/reservoirs.module';
     ReservoirsModule,
     SalesModule,
     ManagersModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
